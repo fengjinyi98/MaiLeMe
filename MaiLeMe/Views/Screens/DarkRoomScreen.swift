@@ -66,6 +66,7 @@ struct DarkRoomScreen: View {
     }
 
     @Environment(\.modelContext) private var modelContext
+    @EnvironmentObject private var navigationState: AppNavigationState
     @Query(sort: \Item.createdAt, order: .reverse) private var allItems: [Item]
 
     @State private var isPresentingAddSheet = false
@@ -217,6 +218,14 @@ struct DarkRoomScreen: View {
         !normalizedSearchText.isEmpty && visibleItemCount == 0
     }
 
+    /// 全局空状态：尚未录入任何待购条目时展示。
+    private var showsGlobalEmptyState: Bool {
+        wishItems.isEmpty
+            && normalizedSearchText.isEmpty
+            && selectedPriceFilter == .all
+            && selectedFocus == .all
+    }
+
     var body: some View {
         NavigationStack {
             ZStack {
@@ -286,9 +295,13 @@ struct DarkRoomScreen: View {
             .onAppear {
                 hasAppeared = true
                 removeInvalidPinnedIDs()
+                consumePendingFocusRoute()
             }
             .onChange(of: wishItems.map(\.id), initial: false) { _, _ in
                 removeInvalidPinnedIDs()
+            }
+            .onChange(of: navigationState.pendingDarkRoomFocus, initial: false) { _, _ in
+                consumePendingFocusRoute()
             }
         }
     }
@@ -314,8 +327,25 @@ struct DarkRoomScreen: View {
     /// 列表分区容器：按“搜索命中/筛选模式”动态组织。
     @ViewBuilder
     private var listSections: some View {
-        if hasNoSearchResult {
-            emptyCard("没有找到匹配条目，换个关键词试试。")
+        if showsGlobalEmptyState {
+            emptyCard(
+                AppConstants.RoastCopy.darkRoomEmpty(),
+                actionTitle: "添加第一件待购"
+            ) {
+                isPresentingAddSheet = true
+            }
+            .cardReveal(isVisible: hasAppeared, delay: 0.08)
+        } else if hasNoSearchResult {
+            emptyCard(
+                "没有找到匹配条目，换个关键词试试。",
+                actionTitle: "清空筛选"
+            ) {
+                withAnimation(AppTheme.Motion.cardSpring) {
+                    searchText = ""
+                    selectedFocus = .all
+                    selectedPriceFilter = .all
+                }
+            }
                 .cardReveal(isVisible: hasAppeared, delay: 0.08)
         } else {
             if shouldShowPinnedSection {
@@ -622,6 +652,11 @@ struct DarkRoomScreen: View {
                     await MockNotificationFactory.sendQuickDemo()
                 }
             }
+            Button("发送图标验证通知（10 秒，先切后台）") {
+                Task {
+                    await MockNotificationFactory.sendBackgroundIconDemo()
+                }
+            }
             Button("发送毒舌通知组（4/8 秒）") {
                 Task {
                     await MockNotificationFactory.sendRoastSequence()
@@ -755,6 +790,22 @@ struct DarkRoomScreen: View {
         undoTitle = nil
     }
 
+    /// 消费来自小组件的筛选跳转请求。
+    private func consumePendingFocusRoute() {
+        guard let focus = navigationState.pendingDarkRoomFocus else {
+            return
+        }
+        switch focus {
+        case .all:
+            selectedFocus = .all
+        case .ready:
+            selectedFocus = .ready
+        case .cooling:
+            selectedFocus = .cooling
+        }
+        navigationState.pendingDarkRoomFocus = nil
+    }
+
     /// 分区标题样式。
     private func sectionHeader(title: String, subtitle: String, count: Int) -> some View {
         VStack(alignment: .leading, spacing: 4) {
@@ -781,11 +832,22 @@ struct DarkRoomScreen: View {
     }
 
     /// 空态卡片。
-    private func emptyCard(_ text: String) -> some View {
+    private func emptyCard(
+        _ text: String,
+        actionTitle: String? = nil,
+        action: (() -> Void)? = nil
+    ) -> some View {
         GlassCardView(accent: AppTheme.Palette.cooling) {
-            Text(text)
-                .foregroundStyle(AppTheme.Palette.secondaryText)
-                .frame(maxWidth: .infinity, alignment: .leading)
+            VStack(alignment: .leading, spacing: 10) {
+                Text(text)
+                    .foregroundStyle(AppTheme.Palette.secondaryText)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+
+                if let actionTitle, let action {
+                    Button(actionTitle, action: action)
+                        .buttonStyle(SolidActionButtonStyle(tint: AppTheme.Palette.accent))
+                }
+            }
         }
     }
 

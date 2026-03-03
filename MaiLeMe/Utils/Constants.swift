@@ -9,6 +9,36 @@ import Foundation
 
 /// 全局常量集中管理，避免魔法数字和散落文案。
 enum AppConstants {
+    /// 小组件共享与深链相关常量。
+    enum Widget {
+        /// 小组件 Kind 标识：用于刷新指定小组件时间线。
+        static let rationalDefenseKind = "MaiLeMeRationalDefenseWidget"
+        /// 小组件 Kind 标识：今日行动卡。
+        static let todayActionKind = "MaiLeMeTodayActionWidget"
+        /// 小组件 Kind 标识：吃灰警报卡。
+        static let idleAlertKind = "MaiLeMeIdleAlertWidget"
+        /// App Group：用于 App 与 Widget 共享快照数据。
+        static let appGroupIdentifier = "group.com.jinyi.MaiLeMe"
+        /// 小组件快照在共享 UserDefaults 中的键名。
+        static let snapshotDefaultsKey = "widget.rationalDefense.snapshot.v1"
+        /// 小组件触发 App 跳转时使用的 URL Scheme。
+        static let deepLinkScheme = "maileme"
+        /// 小组件跳转小黑屋路由 host。
+        static let darkRoomHost = "darkroom"
+        /// 小组件跳转榨干机路由 host。
+        static let extractorHost = "extractor"
+        /// 深链查询参数：聚焦类型。
+        static let focusQueryName = "focus"
+        /// 深链查询参数：物品 ID。
+        static let itemIDQueryName = "itemID"
+        /// 深链查询参数：榨干机入口动作（详情/挽救）。
+        static let extractorEntryQueryName = "entry"
+        /// 榨干机深链入口：详情页。
+        static let extractorEntryDetail = "detail"
+        /// 榨干机深链入口：吃灰挽救页。
+        static let extractorEntryRescue = "rescue"
+    }
+
     /// 本地通知相关常量。
     enum Notification {
         /// 轻提醒阈值：连续未使用天数达到该值时提醒。
@@ -26,6 +56,14 @@ enum AppConstants {
         static let cooldownDecisionFollowupDelay: TimeInterval = 24 * 60 * 60
         /// 吃灰处置追提醒天数（用户点击“7天后再提醒我”时使用）。
         static let rescueFollowupDays = 7
+    }
+
+    /// UserDefaults 键名集中管理，避免散落硬编码。
+    enum UserDefaultsKeys {
+        /// 首次引导是否已展示。
+        static let hasSeenOnboarding = "onboarding.seen.v1"
+        /// 数据迁移当前版本号。
+        static let dataMigrationVersion = "data.migration.version"
     }
 
     /// 毒舌文案池：统一管理通知、仪式页、挽救页、复盘页的“网感文案”。
@@ -386,6 +424,19 @@ enum AppConstants {
             "短冷静期也能守住底线，说明你是真想变有钱。",
             "时间不长但心态在线，这波克制有含金量。",
             "窗口期虽短，理性到场速度很快。"
+        ]
+
+        // MARK: - 空状态文案
+        private static let darkRoomEmptyTemplates: [String] = [
+            "小黑屋现在是空的，说明你今天还挺稳。",
+            "当前无冲动条目，钱包表示想给你加鸡腿。",
+            "还没把新冲动关进来，先保持这份清醒。"
+        ]
+
+        private static let extractorEmptyTemplates: [String] = [
+            "榨干机还没开张，先把想买清单里的条目做完决策。",
+            "这里暂时没有可榨干资产，去小黑屋先处理一单。",
+            "你还没把物品送进榨干机，今天就让第一件开始回血。"
         ]
 
         // MARK: - 通知生成入口
@@ -752,6 +803,16 @@ enum AppConstants {
                 seedKey: itemID.uuidString,
                 extraSeed: cooldownDays
             )
+        }
+
+        /// 小黑屋空状态文案。
+        static func darkRoomEmpty() -> String {
+            pickRandom(from: darkRoomEmptyTemplates, fallback: "小黑屋现在是空的，说明你今天还挺稳。")
+        }
+
+        /// 榨干机空状态文案。
+        static func extractorEmpty() -> String {
+            pickRandom(from: extractorEmptyTemplates, fallback: "榨干机还没开张，先把想买清单里的条目做完决策。")
         }
 
         // MARK: - 通用工具

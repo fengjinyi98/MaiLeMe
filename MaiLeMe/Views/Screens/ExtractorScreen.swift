@@ -10,6 +10,12 @@ import SwiftData
 
 /// 闲置榨干机主页面：卡片化看板 + 详情跳转 + 删除确认与撤销。
 struct ExtractorScreen: View {
+    /// 榨干机内部导航路由：统一承载“详情页/吃灰挽救页”跳转。
+    private enum Route: Hashable {
+        case detail(UUID)
+        case rescue(UUID)
+    }
+
     @Environment(\.modelContext) private var modelContext
     @EnvironmentObject private var navigationState: AppNavigationState
     @Query(sort: \Item.createdAt, order: .reverse) private var allItems: [Item]
@@ -72,7 +78,12 @@ struct ExtractorScreen: View {
                         )
 
                         if purchasedItems.isEmpty {
-                            emptyCard("暂无已购买物品。先去小黑屋做决策。")
+                            emptyCard(
+                                AppConstants.RoastCopy.extractorEmpty(),
+                                actionTitle: "去冲动小黑屋"
+                            ) {
+                                navigationState.selectedTab = .darkRoom
+                            }
                                 .cardReveal(isVisible: hasAppeared, delay: 0.1)
                         } else {
                             ForEach(Array(purchasedItems.enumerated()), id: \.element.id) { index, item in
@@ -135,32 +146,49 @@ struct ExtractorScreen: View {
             } message: {
                 Text(errorMessage ?? "未知错误")
             }
-            .navigationDestination(for: UUID.self) { itemID in
-                if let item = purchasedItems.first(where: { $0.id == itemID }) {
-                    ExtractorItemDetailScreen(
-                        item: item,
-                        viewModel: viewModel,
-                        onDelete: { target in
-                            performDelete(target)
-                        }
-                    )
-                } else {
-                    Text("目标物品不存在或已删除")
-                        .foregroundStyle(AppTheme.Palette.secondaryText)
+            .navigationDestination(for: Route.self) { route in
+                switch route {
+                case .detail(let itemID):
+                    if let item = purchasedItems.first(where: { $0.id == itemID }) {
+                        ExtractorItemDetailScreen(
+                            item: item,
+                            viewModel: viewModel,
+                            onDelete: { target in
+                                performDelete(target)
+                            }
+                        )
+                    } else {
+                        Text("目标物品不存在或已删除")
+                            .foregroundStyle(AppTheme.Palette.secondaryText)
+                    }
+
+                case .rescue(let itemID):
+                    if let item = purchasedItems.first(where: { $0.id == itemID }) {
+                        IdleRescueScreen(item: item, viewModel: viewModel)
+                    } else {
+                        Text("目标物品不存在或已删除")
+                            .foregroundStyle(AppTheme.Palette.secondaryText)
+                    }
                 }
             }
             .onAppear {
                 hasAppeared = true
                 consumePendingCheckinRouteIfPossible()
+                consumePendingRescueRouteIfPossible()
             }
             .onChange(of: navigationState.pendingExtractorItemID, initial: true) { _, _ in
                 consumePendingCheckinRouteIfPossible()
             }
+            .onChange(of: navigationState.pendingIdleRescueItemID, initial: true) { _, _ in
+                consumePendingRescueRouteIfPossible()
+            }
             .onChange(of: purchasedItems.map(\.id), initial: false) { _, _ in
                 consumePendingCheckinRouteIfPossible()
+                consumePendingRescueRouteIfPossible()
             }
             .onChange(of: navigationState.selectedTab, initial: false) { _, _ in
                 consumePendingCheckinRouteIfPossible()
+                consumePendingRescueRouteIfPossible()
             }
         }
     }
@@ -252,7 +280,7 @@ struct ExtractorScreen: View {
         let healthScore = viewModel.healthScore(for: item)
         let healthTint = healthTint(for: healthScore)
 
-        return NavigationLink(value: item.id) {
+        return NavigationLink(value: Route.detail(item.id)) {
             GlassCardView(accent: healthTint) {
                 VStack(alignment: .leading, spacing: 12) {
                     HStack(alignment: .top, spacing: 12) {
@@ -340,7 +368,24 @@ struct ExtractorScreen: View {
 
         navigationState.pendingExtractorItemID = nil
         navigationPath = NavigationPath()
-        navigationPath.append(targetID)
+        navigationPath.append(Route.detail(targetID))
+    }
+
+    /// 消费跨 Tab 跳转请求：切到榨干机后直接打开目标物品吃灰挽救页。
+    private func consumePendingRescueRouteIfPossible() {
+        guard navigationState.selectedTab == .extractor else {
+            return
+        }
+        guard let targetID = navigationState.pendingIdleRescueItemID else {
+            return
+        }
+        guard purchasedItems.contains(where: { $0.id == targetID }) else {
+            return
+        }
+
+        navigationState.pendingIdleRescueItemID = nil
+        navigationPath = NavigationPath()
+        navigationPath.append(Route.rescue(targetID))
     }
 
     /// Top3 卡片样式。
@@ -357,9 +402,7 @@ struct ExtractorScreen: View {
             medalColor = AppTheme.Palette.tertiaryText
         }
 
-        return NavigationLink {
-            IdleRescueScreen(item: item, viewModel: viewModel)
-        } label: {
+        return NavigationLink(value: Route.rescue(item.id)) {
             GlassCardView(accent: AppTheme.Palette.warning) {
                 HStack(spacing: 12) {
                     Text("#\(index)")
@@ -566,11 +609,22 @@ struct ExtractorScreen: View {
     }
 
     /// 空态卡片。
-    private func emptyCard(_ text: String) -> some View {
+    private func emptyCard(
+        _ text: String,
+        actionTitle: String? = nil,
+        action: (() -> Void)? = nil
+    ) -> some View {
         GlassCardView(accent: AppTheme.Palette.cooling) {
-            Text(text)
-                .foregroundStyle(AppTheme.Palette.secondaryText)
-                .frame(maxWidth: .infinity, alignment: .leading)
+            VStack(alignment: .leading, spacing: 10) {
+                Text(text)
+                    .foregroundStyle(AppTheme.Palette.secondaryText)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+
+                if let actionTitle, let action {
+                    Button(actionTitle, action: action)
+                        .buttonStyle(SolidActionButtonStyle(tint: AppTheme.Palette.accent))
+                }
+            }
         }
     }
 

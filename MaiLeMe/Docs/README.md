@@ -1,6 +1,6 @@
 # 买了么（MaiLeMe）项目文档
 
-最后更新：2026-02-28
+最后更新：2026-03-04
 
 ## 文档索引
 
@@ -9,6 +9,9 @@
 3. `DIRECTORY_STRUCTURE.md`：项目目录规范与落地结构
 4. `DATA_CONTRACT_V1.md`：数据实体、状态流转与统计口径
 5. `TODO.md`：开发任务清单与进度追踪
+6. `RELEASE_CHECKLIST_V1.md`：上线前功能/合规/回归检查清单
+7. `PRIVACY_COMPLIANCE_V1.md`：隐私与权限合规口径说明
+8. `KNOWN_ISSUES.md`：已知问题与排查进度追踪
 
 ## 当前阶段
 

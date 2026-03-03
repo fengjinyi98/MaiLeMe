@@ -19,6 +19,16 @@ enum MockNotificationFactory {
         )
     }
 
+    /// 发送一条“真实样式”验证通知。
+    /// 用法：点击后立即切到后台或锁屏，约 10 秒后观察系统通知图标是否为 App 图标。
+    static func sendBackgroundIconDemo() async {
+        await NotificationManager.shared.scheduleDebugNotification(
+            title: "图标验证通知",
+            body: "如果你在后台收到这条，左侧图标应为买了么 App 图标。",
+            after: 10
+        )
+    }
+
     /// 发送连续两条毒舌风格通知，便于观察系统展示效果。
     static func sendRoastSequence(itemName: String = "Kindle") async {
         await NotificationManager.shared.scheduleDebugNotification(

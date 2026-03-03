@@ -38,6 +38,15 @@ final class NotificationManager: NSObject {
         try await center.requestAuthorization(options: [.alert, .badge, .sound])
     }
 
+    /// 获取当前通知授权状态，用于设置页展示和异常引导。
+    func currentAuthorizationStatus() async -> UNAuthorizationStatus {
+        await withCheckedContinuation { continuation in
+            center.getNotificationSettings { settings in
+                continuation.resume(returning: settings.authorizationStatus)
+            }
+        }
+    }
+
     /// 为已购物品安排吃灰提醒（7 天轻提醒 + 30 天强提醒）。
     /// 每次调用会先清理旧提醒，避免重复通知。
     func scheduleIdleReminders(for item: Item) async {

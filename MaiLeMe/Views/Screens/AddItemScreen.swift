@@ -7,11 +7,13 @@
 
 import SwiftUI
 import PhotosUI
+import Photos
 import UIKit
 
 /// 新增待购物品页面。
 struct AddItemScreen: View {
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.openURL) private var openURL
 
     @State private var name: String = ""
     @State private var priceYuanText: String = ""
@@ -19,6 +21,7 @@ struct AddItemScreen: View {
     @State private var selectedPhotoItem: PhotosPickerItem?
     @State private var selectedImageData: Data?
     @State private var imageLoadErrorMessage: String?
+    @State private var photoAuthorizationStatus: PHAuthorizationStatus = .notDetermined
 
     /// 保存回调：由父页面处理持久化。
     let onSubmit: (_ name: String, _ wishPriceCents: Int, _ cooldownDays: Int, _ coverImageData: Data?) -> Void
@@ -116,6 +119,9 @@ struct AddItemScreen: View {
                     await loadSelectedPhoto(from: item)
                 }
             }
+            .task {
+                photoAuthorizationStatus = await currentPhotoAuthorizationStatus()
+            }
         }
     }
 
@@ -167,6 +173,26 @@ struct AddItemScreen: View {
                     Spacer(minLength: 0)
                 }
 
+                if showsPhotoPermissionWarning {
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("相册权限未开启，当前无法选择商品图片。")
+                            .font(.caption)
+                            .foregroundStyle(AppTheme.Palette.warning)
+                        Button {
+                            openSystemSettings()
+                        } label: {
+                            Label("去系统设置开启", systemImage: "gearshape")
+                                .font(.caption.weight(.semibold))
+                        }
+                        .buttonStyle(.plain)
+                        .foregroundStyle(AppTheme.Palette.accent)
+                    }
+                } else if photoAuthorizationStatus == .notDetermined {
+                    Text("首次选择图片时会弹出系统权限请求。")
+                        .font(.caption)
+                        .foregroundStyle(AppTheme.Palette.tertiaryText)
+                }
+
                 if let imageLoadErrorMessage {
                     Text(imageLoadErrorMessage)
                         .font(.caption)
@@ -174,6 +200,11 @@ struct AddItemScreen: View {
                 }
             }
         }
+    }
+
+    /// 是否应展示“相册权限未开启”警告。
+    private var showsPhotoPermissionWarning: Bool {
+        photoAuthorizationStatus == .denied || photoAuthorizationStatus == .restricted
     }
 
     /// 明亮输入框样式，避免系统默认的灰色背景。
@@ -230,7 +261,8 @@ struct AddItemScreen: View {
         guard let item else { return }
         do {
             guard let rawData = try await item.loadTransferable(type: Data.self) else {
-                imageLoadErrorMessage = "图片读取失败，请重新选择。"
+                photoAuthorizationStatus = await currentPhotoAuthorizationStatus()
+                imageLoadErrorMessage = showsPhotoPermissionWarning ? "相册权限未开启，请到系统设置授权。" : "图片读取失败，请重新选择。"
                 return
             }
             guard let normalizedData = normalizedImageData(from: rawData) else {
@@ -239,14 +271,27 @@ struct AddItemScreen: View {
             }
             selectedImageData = normalizedData
             imageLoadErrorMessage = nil
+            photoAuthorizationStatus = await currentPhotoAuthorizationStatus()
         } catch {
             imageLoadErrorMessage = "图片读取失败，请稍后重试。"
+            photoAuthorizationStatus = await currentPhotoAuthorizationStatus()
         }
     }
 
     /// 统一图片压缩策略，避免原图直接入库导致体积过大。
     private func normalizedImageData(from rawData: Data) -> Data? {
         ImageDataTransformer.normalizedJPEGData(from: rawData)
+    }
+
+    /// 获取当前相册授权状态。
+    private func currentPhotoAuthorizationStatus() async -> PHAuthorizationStatus {
+        PHPhotoLibrary.authorizationStatus(for: .readWrite)
+    }
+
+    /// 跳转系统设置页。
+    private func openSystemSettings() {
+        guard let url = URL(string: UIApplication.openSettingsURLString) else { return }
+        openURL(url)
     }
 }
 
