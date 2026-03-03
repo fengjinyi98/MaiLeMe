@@ -8,6 +8,49 @@
 import SwiftUI
 import WidgetKit
 
+/// 多邻国风格色彩系统
+private enum DuolingoColors {
+    static let green = Color(red: 0.35, green: 0.80, blue: 0.01)     // #58CC02
+    static let greenDark = Color(red: 0.29, green: 0.67, blue: 0.01) // #4B9E00
+    static let blue = Color(red: 0.11, green: 0.69, blue: 0.96)      // #1CB0F6
+    static let blueDark = Color(red: 0.09, green: 0.58, blue: 0.81)  // #1899D6
+    static let orange = Color(red: 1.00, green: 0.59, blue: 0.00)    // #FF9600
+    static let orangeDark = Color(red: 0.85, green: 0.50, blue: 0.00)// #D97E00
+    static let red = Color(red: 1.00, green: 0.29, blue: 0.29)       // #FF4B4B
+    static let redDark = Color(red: 0.84, green: 0.25, blue: 0.25)   // #D63F3F
+    static let yellow = Color(red: 1.00, green: 0.78, blue: 0.00)    // #FFC800
+    static let gray = Color(red: 0.90, green: 0.90, blue: 0.90)
+    static let textMain = Color.primary
+    static let textSecondary = Color.secondary
+}
+
+/// 多邻国风格的 3D 按钮/卡片修饰器
+struct Duolingo3DStyle: ViewModifier {
+    let color: Color
+    let darkColor: Color
+    let depth: CGFloat
+    let cornerRadius: CGFloat
+
+    func body(content: Content) -> some View {
+        content
+            .background(
+                ZStack {
+                    RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+                        .fill(darkColor)
+                        .offset(y: depth)
+                    RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+                        .fill(color)
+                }
+            )
+    }
+}
+
+extension View {
+    func duolingoButtonStyle(color: Color, darkColor: Color, depth: CGFloat = 4, cornerRadius: CGFloat = 12) -> some View {
+        self.modifier(Duolingo3DStyle(color: color, darkColor: darkColor, depth: depth, cornerRadius: cornerRadius))
+    }
+}
+
 /// 小组件共享常量：与主 App 约定同一组键值，避免 magic string 漂移。
 private enum WidgetSharedConstants {
     static let rationalDefenseKind = "MaiLeMeRationalDefenseWidget"
@@ -223,6 +266,7 @@ struct IdleAlertWidget: Widget {
 private struct RationalDefenseWidgetEntryView: View {
     let entry: RationalDefenseEntry
     @Environment(\.widgetFamily) private var family
+    @Environment(\.colorScheme) private var colorScheme
 
     var body: some View {
         switch family {
@@ -242,119 +286,116 @@ private struct RationalDefenseWidgetEntryView: View {
 
     /// 小尺寸布局：突出今天最核心的理性指标。
     private var smallLayout: some View {
-        VStack(alignment: .leading, spacing: 8) {
+        VStack(alignment: .leading, spacing: 10) {
             HStack {
                 Text("理性防线")
-                    .font(.system(size: 14, weight: .heavy, design: .rounded))
+                    .font(.system(size: 14, weight: .black, design: .rounded))
+                    .foregroundStyle(DuolingoColors.green)
                 Spacer()
                 Text("总 \(entry.snapshot.totalWishCount)")
-                    .font(.caption2.weight(.semibold))
+                    .font(.system(size: 10, weight: .bold, design: .rounded))
                     .foregroundStyle(.secondary)
             }
 
-            metricRow(title: "可决策", value: "\(entry.snapshot.readyCount)", tint: .green)
-            metricRow(title: "待冷静", value: "\(entry.snapshot.coolingCount)", tint: .orange)
-            metricRow(title: "省下", value: moneyText(entry.snapshot.totalSavedAmountCents), tint: .blue)
+            VStack(spacing: 8) {
+                metricRow(title: "可决策", value: "\(entry.snapshot.readyCount)", color: DuolingoColors.green, darkColor: DuolingoColors.greenDark)
+                metricRow(title: "待冷静", value: "\(entry.snapshot.coolingCount)", color: DuolingoColors.orange, darkColor: DuolingoColors.orangeDark)
+                metricRow(title: "已省下", value: moneyText(entry.snapshot.totalSavedAmountCents), color: DuolingoColors.blue, darkColor: DuolingoColors.blueDark)
+            }
 
             Spacer(minLength: 0)
         }
-        .padding(14)
+        .padding(12)
     }
 
     /// 中尺寸布局：增加吃灰风险与操作入口。
     private var mediumLayout: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: 8) {
             HStack {
                 Text("理性防线总览")
-                    .font(.system(size: 16, weight: .heavy, design: .rounded))
+                    .font(.system(size: 15, weight: .black, design: .rounded))
+                    .foregroundStyle(DuolingoColors.green)
                 Spacer()
                 Text(relativeTimeText(entry.snapshot.generatedAt))
-                    .font(.caption2)
+                    .font(.system(size: 9, weight: .bold, design: .rounded))
                     .foregroundStyle(.secondary)
             }
 
-            HStack(spacing: 10) {
-                metricPill(title: "可决策", value: "\(entry.snapshot.readyCount)", tint: .green)
-                metricPill(title: "待冷静", value: "\(entry.snapshot.coolingCount)", tint: .orange)
-                metricPill(title: "省下总额", value: moneyText(entry.snapshot.totalSavedAmountCents), tint: .blue)
+            HStack(spacing: 8) {
+                metricPill(title: "可决策", value: "\(entry.snapshot.readyCount)", color: DuolingoColors.green, darkColor: DuolingoColors.greenDark)
+                metricPill(title: "待冷静", value: "\(entry.snapshot.coolingCount)", color: DuolingoColors.orange, darkColor: DuolingoColors.orangeDark)
+                metricPill(title: "已省下", value: moneyShortText(entry.snapshot.totalSavedAmountCents), color: DuolingoColors.blue, darkColor: DuolingoColors.blueDark)
             }
 
-            HStack(spacing: 8) {
+            HStack(spacing: 6) {
                 Image(systemName: "exclamationmark.triangle.fill")
-                    .foregroundStyle(.yellow)
+                    .font(.system(size: 10))
+                    .foregroundStyle(DuolingoColors.yellow)
                 Text(topIdleText)
-                    .font(.caption)
+                    .font(.system(size: 11, weight: .bold, design: .rounded))
                     .lineLimit(1)
                     .foregroundStyle(.secondary)
             }
 
-            HStack(spacing: 10) {
+            HStack(spacing: 12) {
                 Link(destination: focusURL(.ready)) {
-                    actionButton(title: "看可决策", tint: .green)
+                    actionButton(title: "看可决策", color: DuolingoColors.green, darkColor: DuolingoColors.greenDark)
                 }
                 Link(destination: focusURL(.cooling)) {
-                    actionButton(title: "看待冷静", tint: .orange)
+                    actionButton(title: "看待冷静", color: DuolingoColors.orange, darkColor: DuolingoColors.orangeDark)
                 }
             }
         }
-        .padding(14)
+        .padding(12)
     }
 
     /// 指标行。
-    private func metricRow(title: String, value: String, tint: Color) -> some View {
+    private func metricRow(title: String, value: String, color: Color, darkColor: Color) -> some View {
         HStack {
             Text(title)
-                .font(.caption)
+                .font(.system(size: 11, weight: .bold, design: .rounded))
                 .foregroundStyle(.secondary)
             Spacer()
             Text(value)
-                .font(.system(size: 15, weight: .bold, design: .rounded))
-                .foregroundStyle(tint)
+                .font(.system(size: 12, weight: .black, design: .rounded))
+                .foregroundStyle(.white)
+                .padding(.horizontal, 8)
+                .padding(.vertical, 2)
+                .duolingoButtonStyle(color: color, darkColor: darkColor, depth: 2, cornerRadius: 6)
         }
     }
 
     /// 指标胶囊。
-    private func metricPill(title: String, value: String, tint: Color) -> some View {
+    private func metricPill(title: String, value: String, color: Color, darkColor: Color) -> some View {
         VStack(alignment: .leading, spacing: 2) {
             Text(title)
-                .font(.caption2)
-                .foregroundStyle(.secondary)
+                .font(.system(size: 10, weight: .bold, design: .rounded))
+                .foregroundStyle(.white.opacity(0.9))
             Text(value)
-                .font(.system(size: 14, weight: .heavy, design: .rounded))
-                .foregroundStyle(tint)
+                .font(.system(size: 14, weight: .black, design: .rounded))
+                .foregroundStyle(.white)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(.horizontal, 10)
         .padding(.vertical, 8)
-        .background(
-            RoundedRectangle(cornerRadius: 10, style: .continuous)
-                .fill(Color.white.opacity(0.14))
-        )
+        .duolingoButtonStyle(color: color, darkColor: darkColor, depth: 3, cornerRadius: 10)
     }
 
     /// 操作按钮样式。
-    private func actionButton(title: String, tint: Color) -> some View {
+    private func actionButton(title: String, color: Color, darkColor: Color) -> some View {
         Text(title)
-            .font(.caption.weight(.semibold))
+            .font(.system(size: 13, weight: .black, design: .rounded))
             .foregroundStyle(.white)
             .frame(maxWidth: .infinity)
-            .padding(.vertical, 8)
-            .background(
-                RoundedRectangle(cornerRadius: 10, style: .continuous)
-                    .fill(tint)
-            )
+            .padding(.vertical, 10)
+            .duolingoButtonStyle(color: color, darkColor: darkColor, depth: 4, cornerRadius: 12)
     }
 
-    /// 小组件底色：保持和 App 主视觉一致的蓝色系。
+    /// 小组件底色：使用 iOS 26 的 Liquid Glass 效果。
     private var widgetBackground: some View {
-        LinearGradient(
-            colors: [
-                Color(red: 0.05, green: 0.18, blue: 0.42),
-                Color(red: 0.04, green: 0.10, blue: 0.28)
-            ],
-            startPoint: .topLeading,
-            endPoint: .bottomTrailing
-        )
+        Rectangle()
+            .fill(.clear)
+            .glassEffect(.regular.interactive(), in: .rect)
     }
 
     /// 吃灰提醒文本。
@@ -362,7 +403,7 @@ private struct RationalDefenseWidgetEntryView: View {
         guard let name = entry.snapshot.topIdleItemName, let days = entry.snapshot.topIdleDays else {
             return "暂无吃灰风险数据。"
         }
-        return "\(name) 已闲置 \(days) 天，今天该它上岗了。"
+        return "\(name)已吃灰\(days)天"
     }
 
     /// 优先跳转目标：有可决策就优先去可决策，否则去待冷静。
@@ -386,7 +427,18 @@ private struct RationalDefenseWidgetEntryView: View {
 
     /// 金额展示（分 -> 元）。
     private func moneyText(_ cents: Int) -> String {
-        String(format: "¥%.2f", Double(cents) / 100.0)
+        String(format: "¥%.1f", Double(cents) / 100.0)
+    }
+
+    /// 金额展示（简写）。
+    private func moneyShortText(_ cents: Int) -> String {
+        let yuan = Double(cents) / 100.0
+        if yuan >= 10000 {
+            return String(format: "%.1fW", yuan / 10000.0)
+        } else if yuan >= 1000 {
+            return String(format: "%.1fK", yuan / 1000.0)
+        }
+        return String(format: "%.0f", yuan)
     }
 
     /// 相对更新时间展示。
@@ -405,7 +457,8 @@ private struct TodayActionPlan {
     let subtitle: String
     let buttonTitle: String
     let iconName: String
-    let tint: Color
+    let color: Color
+    let darkColor: Color
     let url: URL
 }
 
@@ -413,6 +466,7 @@ private struct TodayActionPlan {
 private struct TodayActionWidgetEntryView: View {
     let entry: TodayActionEntry
     @Environment(\.widgetFamily) private var family
+    @Environment(\.colorScheme) private var colorScheme
 
     private var plan: TodayActionPlan {
         buildTodayActionPlan(from: entry.snapshot)
@@ -437,116 +491,116 @@ private struct TodayActionWidgetEntryView: View {
 
     /// 小尺寸布局：只留“今天做什么 + 一键执行”。
     private var smallLayout: some View {
-        VStack(alignment: .leading, spacing: 10) {
+        VStack(alignment: .leading, spacing: 8) {
             HStack {
                 Text("今日行动")
-                    .font(.system(size: 14, weight: .heavy, design: .rounded))
+                    .font(.system(size: 14, weight: .black, design: .rounded))
+                    .foregroundStyle(DuolingoColors.green)
                 Spacer()
                 Text(plan.badge)
-                    .font(.caption2.weight(.bold))
-                    .padding(.horizontal, 8)
-                    .padding(.vertical, 4)
+                    .font(.system(size: 10, weight: .bold, design: .rounded))
+                    .padding(.horizontal, 6)
+                    .padding(.vertical, 2)
                     .background(
                         Capsule()
-                            .fill(plan.tint.opacity(0.22))
+                            .fill(plan.color.opacity(0.15))
                     )
+                    .foregroundStyle(plan.color)
             }
 
-            Label {
-                Text(plan.title)
-                    .font(.headline)
-                    .foregroundStyle(.white)
+            VStack(alignment: .leading, spacing: 4) {
+                Label {
+                    Text(plan.title)
+                        .font(.system(size: 15, weight: .black, design: .rounded))
+                        .foregroundStyle(colorScheme == .dark ? .white : .black)
+                        .lineLimit(2)
+                        .minimumScaleFactor(0.85)
+                } icon: {
+                    Image(systemName: plan.iconName)
+                        .foregroundStyle(plan.color)
+                }
+
+                Text(plan.subtitle)
+                    .font(.system(size: 11, weight: .bold, design: .rounded))
+                    .foregroundStyle(.secondary)
                     .lineLimit(2)
-                    .minimumScaleFactor(0.85)
-            } icon: {
-                Image(systemName: plan.iconName)
-                    .foregroundStyle(plan.tint)
             }
-
-            Text(plan.subtitle)
-                .font(.caption)
-                .foregroundStyle(.white.opacity(0.82))
-                .lineLimit(2)
 
             Spacer(minLength: 0)
 
             Text(plan.buttonTitle)
-                .font(.caption.weight(.bold))
+                .font(.system(size: 12, weight: .black, design: .rounded))
                 .foregroundStyle(.white)
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, 8)
-                .background(
-                    RoundedRectangle(cornerRadius: 10, style: .continuous)
-                        .fill(plan.tint)
-                )
+                .duolingoButtonStyle(color: plan.color, darkColor: plan.darkColor, depth: 3, cornerRadius: 10)
         }
-        .padding(14)
+        .padding(12)
     }
 
     /// 中尺寸布局：增加“为何推荐”的上下文信息。
     private var mediumLayout: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: 10) {
             HStack {
                 Text("今日行动卡")
-                    .font(.system(size: 16, weight: .heavy, design: .rounded))
+                    .font(.system(size: 15, weight: .black, design: .rounded))
+                    .foregroundStyle(DuolingoColors.green)
                 Spacer()
                 Text(relativeTimeText(entry.snapshot.generatedAt))
-                    .font(.caption2)
+                    .font(.system(size: 9, weight: .bold, design: .rounded))
                     .foregroundStyle(.secondary)
             }
 
-            HStack(alignment: .top, spacing: 12) {
-                VStack(alignment: .leading, spacing: 6) {
+            HStack(alignment: .top, spacing: 10) {
+                VStack(alignment: .leading, spacing: 4) {
                     Text(plan.badge)
-                        .font(.caption2.weight(.bold))
-                        .foregroundStyle(.white)
-                        .padding(.horizontal, 8)
-                        .padding(.vertical, 4)
+                        .font(.system(size: 9, weight: .bold, design: .rounded))
+                        .foregroundStyle(plan.color)
+                        .padding(.horizontal, 6)
+                        .padding(.vertical, 2)
                         .background(
                             Capsule()
-                                .fill(plan.tint.opacity(0.26))
+                                .fill(plan.color.opacity(0.12))
                         )
 
                     Text(plan.title)
-                        .font(.system(size: 20, weight: .black, design: .rounded))
-                        .foregroundStyle(.white)
+                        .font(.system(size: 18, weight: .black, design: .rounded))
+                        .foregroundStyle(colorScheme == .dark ? .white : .black)
                         .lineLimit(2)
-                        .minimumScaleFactor(0.75)
+                        .minimumScaleFactor(0.85)
 
                     Text(plan.subtitle)
-                        .font(.subheadline)
-                        .foregroundStyle(.white.opacity(0.84))
-                        .lineLimit(2)
+                        .font(.system(size: 12, weight: .bold, design: .rounded))
+                        .foregroundStyle(.secondary)
+                        .lineLimit(1)
                 }
 
-                Spacer(minLength: 8)
+                Spacer(minLength: 4)
 
-                Image(systemName: plan.iconName)
-                    .font(.system(size: 28, weight: .black))
-                    .foregroundStyle(plan.tint)
-                    .frame(width: 54, height: 54)
-                    .background(
-                        RoundedRectangle(cornerRadius: 14, style: .continuous)
-                            .fill(.white.opacity(0.10))
-                    )
+                ZStack {
+                    RoundedRectangle(cornerRadius: 12, style: .continuous)
+                        .fill(plan.color.opacity(0.1))
+                    Image(systemName: plan.iconName)
+                        .font(.system(size: 24, weight: .black))
+                        .foregroundStyle(plan.color)
+                }
+                .frame(width: 48, height: 48)
             }
 
             HStack {
                 Text(plan.buttonTitle)
-                    .font(.caption.weight(.bold))
+                    .font(.system(size: 13, weight: .black, design: .rounded))
                     .foregroundStyle(.white)
                 Spacer()
                 Image(systemName: "arrow.right.circle.fill")
+                    .font(.system(size: 13))
                     .foregroundStyle(.white.opacity(0.92))
             }
-            .padding(.horizontal, 12)
+            .padding(.horizontal, 14)
             .padding(.vertical, 10)
-            .background(
-                RoundedRectangle(cornerRadius: 12, style: .continuous)
-                    .fill(plan.tint)
-            )
+            .duolingoButtonStyle(color: plan.color, darkColor: plan.darkColor, depth: 3, cornerRadius: 10)
         }
-        .padding(14)
+        .padding(12)
     }
 
     /// 今日动作决策器：优先推动“可决策”清单，其次救活吃灰，再处理待冷静。
@@ -558,7 +612,8 @@ private struct TodayActionWidgetEntryView: View {
                 subtitle: "今天先判一件，避免拖延后再次冲动下单。",
                 buttonTitle: "去小黑屋决策",
                 iconName: "gavel.fill",
-                tint: Color(red: 0.20, green: 0.78, blue: 0.40),
+                color: DuolingoColors.green,
+                darkColor: DuolingoColors.greenDark,
                 url: focusURL(.ready)
             )
         }
@@ -568,11 +623,12 @@ private struct TodayActionWidgetEntryView: View {
            let name = snapshot.topIdleItemName {
             return TodayActionPlan(
                 badge: "吃灰预警",
-                title: "\(name) 已吃灰 \(idleDays) 天",
+                title: "\(name)已吃灰\(idleDays)天",
                 subtitle: "现在打卡一次，先把它从吃灰名单里拽出来。",
                 buttonTitle: "去榨干机打卡",
                 iconName: "flame.fill",
-                tint: Color(red: 1.0, green: 0.56, blue: 0.0),
+                color: DuolingoColors.orange,
+                darkColor: DuolingoColors.orangeDark,
                 url: extractorURL(itemID: snapshot.topIdleItemID)
             )
         }
@@ -584,20 +640,9 @@ private struct TodayActionWidgetEntryView: View {
                 subtitle: "复盘一次清单，避免“看着看着就下单”。",
                 buttonTitle: "查看待冷静",
                 iconName: "hourglass.bottomhalf.filled",
-                tint: Color(red: 0.23, green: 0.56, blue: 1.0),
+                color: DuolingoColors.blue,
+                darkColor: DuolingoColors.blueDark,
                 url: focusURL(.cooling)
-            )
-        }
-
-        if snapshot.totalWishCount > 0 {
-            return TodayActionPlan(
-                badge: "轻任务",
-                title: "快速过一遍小黑屋清单",
-                subtitle: "今天没有高优先级，花 10 秒做一次盘点即可。",
-                buttonTitle: "打开小黑屋",
-                iconName: "checklist",
-                tint: Color(red: 0.37, green: 0.63, blue: 1.0),
-                url: focusURL(.all)
             )
         }
 
@@ -607,21 +652,17 @@ private struct TodayActionWidgetEntryView: View {
             subtitle: "清单很干净，继续让已买资产发挥价值。",
             buttonTitle: "打开榨干机",
             iconName: "bolt.fill",
-            tint: Color(red: 0.20, green: 0.78, blue: 0.40),
+            color: DuolingoColors.green,
+            darkColor: DuolingoColors.greenDark,
             url: extractorURL(itemID: nil)
         )
     }
 
-    /// 今日行动卡背景：与 App 主视觉统一，同时提高按钮对比度。
+    /// 今日行动卡背景：使用 iOS 26 的 Liquid Glass 效果，确保立体按钮更突出。
     private var widgetBackground: some View {
-        LinearGradient(
-            colors: [
-                Color(red: 0.04, green: 0.16, blue: 0.40),
-                Color(red: 0.03, green: 0.08, blue: 0.24)
-            ],
-            startPoint: .topLeading,
-            endPoint: .bottomTrailing
-        )
+        Rectangle()
+            .fill(.clear)
+            .glassEffect(.regular.interactive(), in: .rect)
     }
 
     /// 生成小黑屋深链 URL。
@@ -661,6 +702,7 @@ private struct TodayActionWidgetEntryView: View {
 private struct IdleAlertWidgetEntryView: View {
     let entry: IdleAlertEntry
     @Environment(\.widgetFamily) private var family
+    @Environment(\.colorScheme) private var colorScheme
 
     /// 风险分级：用于映射颜色、标题与行为优先级。
     private enum AlertLevel {
@@ -695,16 +737,16 @@ private struct IdleAlertWidgetEntryView: View {
         }
     }
 
-    private var levelTint: Color {
+    private var levelColors: (main: Color, dark: Color) {
         switch level {
         case .none:
-            return Color(red: 0.26, green: 0.70, blue: 1.0)
+            return (DuolingoColors.blue, DuolingoColors.blueDark)
         case .light:
-            return Color(red: 0.18, green: 0.80, blue: 0.44)
+            return (DuolingoColors.green, DuolingoColors.greenDark)
         case .medium:
-            return Color(red: 1.0, green: 0.62, blue: 0.12)
+            return (DuolingoColors.orange, DuolingoColors.orangeDark)
         case .high:
-            return Color(red: 1.0, green: 0.34, blue: 0.24)
+            return (DuolingoColors.red, DuolingoColors.redDark)
         }
     }
 
@@ -737,152 +779,148 @@ private struct IdleAlertWidgetEntryView: View {
 
     /// 小尺寸布局：突出“哪件在吃灰 + 今天就救”。
     private var smallLayout: some View {
-        VStack(alignment: .leading, spacing: 10) {
+        VStack(alignment: .leading, spacing: 8) {
             HStack {
                 Text("吃灰警报")
-                    .font(.system(size: 14, weight: .heavy, design: .rounded))
+                    .font(.system(size: 14, weight: .black, design: .rounded))
+                    .foregroundStyle(DuolingoColors.red)
                 Spacer()
                 Text(levelTitle)
-                    .font(.caption2.weight(.bold))
-                    .foregroundStyle(.white)
-                    .padding(.horizontal, 8)
-                    .padding(.vertical, 4)
+                    .font(.system(size: 10, weight: .bold, design: .rounded))
+                    .foregroundStyle(levelColors.main)
+                    .padding(.horizontal, 6)
+                    .padding(.vertical, 2)
                     .background(
                         Capsule()
-                            .fill(levelTint.opacity(0.22))
+                            .fill(levelColors.main.opacity(0.15))
                     )
             }
 
-            Text(alertHeadline)
-                .font(.headline)
-                .foregroundStyle(.white)
-                .lineLimit(2)
-                .minimumScaleFactor(0.82)
+            VStack(alignment: .leading, spacing: 4) {
+                Text(alertHeadline)
+                    .font(.system(size: 15, weight: .black, design: .rounded))
+                    .foregroundStyle(colorScheme == .dark ? .white : .black)
+                    .lineLimit(2)
+                    .minimumScaleFactor(0.82)
 
-            Text(alertSubtitle)
-                .font(.caption)
-                .foregroundStyle(.white.opacity(0.84))
-                .lineLimit(2)
+                Text(alertSubtitle)
+                    .font(.system(size: 11, weight: .bold, design: .rounded))
+                    .foregroundStyle(.secondary)
+                    .lineLimit(2)
+            }
 
             Spacer(minLength: 0)
 
             Text("立刻去挽救")
-                .font(.caption.weight(.bold))
+                .font(.system(size: 12, weight: .black, design: .rounded))
                 .foregroundStyle(.white)
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, 8)
-                .background(
-                    RoundedRectangle(cornerRadius: 10, style: .continuous)
-                        .fill(levelTint)
-                )
+                .duolingoButtonStyle(color: levelColors.main, darkColor: levelColors.dark, depth: 3, cornerRadius: 10)
         }
-        .padding(14)
+        .padding(12)
     }
 
     /// 中尺寸布局：补充风险指标与执行提示，形成“预警 -> 行动”闭环。
     private var mediumLayout: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: 10) {
             HStack {
                 Text("吃灰警报卡")
-                    .font(.system(size: 16, weight: .heavy, design: .rounded))
+                    .font(.system(size: 15, weight: .black, design: .rounded))
+                    .foregroundStyle(DuolingoColors.red)
                 Spacer()
                 Text(relativeTimeText(entry.snapshot.generatedAt))
-                    .font(.caption2)
+                    .font(.system(size: 9, weight: .bold, design: .rounded))
                     .foregroundStyle(.secondary)
             }
 
-            HStack(spacing: 12) {
-                VStack(alignment: .leading, spacing: 6) {
+            HStack(spacing: 8) {
+                VStack(alignment: .leading, spacing: 4) {
                     Text(levelTitle)
-                        .font(.caption2.weight(.bold))
-                        .foregroundStyle(.white)
-                        .padding(.horizontal, 8)
-                        .padding(.vertical, 4)
+                        .font(.system(size: 9, weight: .bold, design: .rounded))
+                        .foregroundStyle(levelColors.main)
+                        .padding(.horizontal, 6)
+                        .padding(.vertical, 2)
                         .background(
                             Capsule()
-                                .fill(levelTint.opacity(0.24))
+                                .fill(levelColors.main.opacity(0.12))
                         )
 
                     Text(alertHeadline)
-                        .font(.system(size: 22, weight: .black, design: .rounded))
-                        .foregroundStyle(.white)
+                        .font(.system(size: 17, weight: .black, design: .rounded))
+                        .foregroundStyle(colorScheme == .dark ? .white : .black)
                         .lineLimit(2)
-                        .minimumScaleFactor(0.72)
+                        .minimumScaleFactor(0.8)
 
                     Text(alertSubtitle)
-                        .font(.subheadline)
-                        .foregroundStyle(.white.opacity(0.84))
-                        .lineLimit(2)
+                        .font(.system(size: 11, weight: .bold, design: .rounded))
+                        .foregroundStyle(.secondary)
+                        .lineLimit(1)
                 }
 
-                Spacer(minLength: 8)
+                Spacer(minLength: 4)
 
-                VStack(spacing: 8) {
-                    alertMetric(title: "吃灰天数", value: idleDaysText)
-                    alertMetric(title: "待冷静", value: "\(entry.snapshot.coolingCount)")
+                VStack(spacing: 6) {
+                    alertMetric(title: "吃灰天数", value: idleDaysText, color: levelColors.main, darkColor: levelColors.dark)
+                    alertMetric(title: "待冷静", value: "\(entry.snapshot.coolingCount)", color: DuolingoColors.orange, darkColor: DuolingoColors.orangeDark)
                 }
             }
 
             HStack {
                 Label("打开挽救页", systemImage: "lifepreserver.fill")
-                    .font(.caption.weight(.bold))
+                    .font(.system(size: 13, weight: .black, design: .rounded))
                     .foregroundStyle(.white)
                 Spacer()
                 Image(systemName: "arrow.right.circle.fill")
+                    .font(.system(size: 13))
                     .foregroundStyle(.white.opacity(0.92))
             }
-            .padding(.horizontal, 12)
+            .padding(.horizontal, 14)
             .padding(.vertical, 10)
-            .background(
-                RoundedRectangle(cornerRadius: 12, style: .continuous)
-                    .fill(levelTint)
-            )
+            .duolingoButtonStyle(color: levelColors.main, darkColor: levelColors.dark, depth: 3, cornerRadius: 10)
         }
-        .padding(14)
+        .padding(12)
     }
 
     /// 警报指标胶囊。
-    private func alertMetric(title: String, value: String) -> some View {
-        VStack(alignment: .leading, spacing: 2) {
+    private func alertMetric(title: String, value: String, color: Color, darkColor: Color) -> some View {
+        VStack(alignment: .leading, spacing: 1) {
             Text(title)
-                .font(.caption2)
-                .foregroundStyle(.secondary)
+                .font(.system(size: 8, weight: .bold, design: .rounded))
+                .foregroundStyle(.white.opacity(0.9))
             Text(value)
-                .font(.system(size: 14, weight: .heavy, design: .rounded))
+                .font(.system(size: 12, weight: .black, design: .rounded))
                 .foregroundStyle(.white)
         }
-        .frame(width: 76, alignment: .leading)
-        .padding(.horizontal, 10)
-        .padding(.vertical, 8)
-        .background(
-            RoundedRectangle(cornerRadius: 10, style: .continuous)
-                .fill(.white.opacity(0.14))
-        )
+        .frame(width: 70, alignment: .leading)
+        .padding(.horizontal, 8)
+        .padding(.vertical, 4)
+        .duolingoButtonStyle(color: color, darkColor: darkColor, depth: 2, cornerRadius: 6)
     }
 
     /// 主标题：没有数据时降级为空状态引导。
     private var alertHeadline: String {
         guard let itemName = entry.snapshot.topIdleItemName,
               let idleDays = entry.snapshot.topIdleDays else {
-            return "当前没有高风险吃灰资产"
+            return "暂无高风险吃灰资产"
         }
-        return "\(itemName) 已吃灰 \(idleDays) 天"
+        return "\(itemName)已吃灰\(idleDays)天"
     }
 
     /// 副标题：给出毒舌行动提示。
     private var alertSubtitle: String {
         guard entry.snapshot.topIdleItemName != nil,
               let idleDays = entry.snapshot.topIdleDays else {
-            return "今天可把精力放在打卡连击，继续压低单次成本。"
+            return "今天可继续打卡连击，降低成本。"
         }
 
         switch idleDays {
         case 0..<7:
-            return "还来得及，今天用一次就能把它拉出警戒线。"
+            return "还来得及，今天用一次就能救它。"
         case 7..<30:
-            return "再拖就要进重灾区，先打卡再决定留还是卖。"
+            return "再拖进重灾区，打卡或卖掉？"
         default:
-            return "它已经在家里“站岗”太久，今天必须做处置动作。"
+            return "“站岗”太久，今天必须处置。"
         }
     }
 
@@ -891,19 +929,14 @@ private struct IdleAlertWidgetEntryView: View {
         guard let idleDays = entry.snapshot.topIdleDays else {
             return "--"
         }
-        return "\(idleDays) 天"
+        return "\(idleDays)天"
     }
 
-    /// 吃灰警报卡背景：提高对比度，保证亮色预警标签可读。
+    /// 吃灰警报卡背景：使用 iOS 26 的 Liquid Glass 效果，完美适应主屏幕壁纸。
     private var widgetBackground: some View {
-        LinearGradient(
-            colors: [
-                Color(red: 0.12, green: 0.07, blue: 0.28),
-                Color(red: 0.05, green: 0.05, blue: 0.16)
-            ],
-            startPoint: .topLeading,
-            endPoint: .bottomTrailing
-        )
+        Rectangle()
+            .fill(.clear)
+            .glassEffect(.regular.interactive(), in: .rect)
     }
 
     /// 生成榨干机深链 URL：支持详情或挽救入口。
