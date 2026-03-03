@@ -12,7 +12,7 @@ import UIKit
 struct ItemThumbnailView: View {
     let imageData: Data?
     var size: CGFloat = 56
-    var cornerRadius: CGFloat = 12
+    var cornerRadius: CGFloat = 16 // 多邻国风格：放大圆角
     var placeholderSystemName: String = "photo"
 
     private var uiImage: UIImage? {
@@ -30,15 +30,16 @@ struct ItemThumbnailView: View {
                 RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
                     .fill(AppTheme.Palette.progressTrack)
                 Image(systemName: placeholderSystemName)
-                    .font(.system(size: size * 0.34, weight: .semibold))
+                    .font(.system(size: size * 0.34, weight: .bold)) // 加粗 icon
                     .foregroundStyle(AppTheme.Palette.tertiaryText)
             }
         }
         .frame(width: size, height: size)
         .clipShape(RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
         .overlay(
+            // 加粗线框，呼应卡片风格
             RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-                .stroke(AppTheme.Palette.cardStroke, lineWidth: 0.8)
+                .stroke(AppTheme.Palette.cardStroke, lineWidth: 2.0)
         )
         .accessibilityHidden(true)
     }

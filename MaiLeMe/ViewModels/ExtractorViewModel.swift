@@ -15,6 +15,7 @@ enum PurchasedStatusTone {
     case lightIdle
     case midIdle
     case heavyIdle
+    case resale
 }
 
 /// 已购物品状态标签。
@@ -23,11 +24,30 @@ struct PurchasedStatusTag {
     let tone: PurchasedStatusTone
 }
 
+/// 资产健康度快照：用于统一驱动列表、看板与详情页展示。
+struct ItemHealthSnapshot {
+    /// 综合健康度（0.0 ~ 1.0）。
+    let overallScore: Double
+    /// 资产效率分：买入价分摊到日均后的效率感知。
+    let assetEfficiencyScore: Double
+    /// 使用活跃分：近 30 天活跃天数映射分值。
+    let activityScore: Double
+    /// 闲置风险分：连续闲置越久，分值越低。
+    let idleRiskScore: Double
+    /// 近 30 天活跃天数。
+    let activeDaysIn30: Int
+    /// 连续闲置天数。
+    let idleDays: Int
+    /// 日均持有成本（分/天）。
+    let dailyHoldingCostCents: Int
+}
+
 /// 打卡成功仪式感文案。
 struct CheckinCelebrationPayload {
     let title: String
     let subtitle: String
     let badge: String
+    let roastLine: String
     let isBigMoment: Bool
 }
 
@@ -119,6 +139,91 @@ final class ExtractorViewModel {
         return min(max(progress, 0), 1)
     }
 
+    /// 统一资产健康度：用于替代“仅靠目标单次成本”的单一回本进度。
+    /// 口径：
+    /// 1) 资产效率：买入价 / 持有天数（分/天）映射到 0~1；
+    /// 2) 使用活跃：近 30 天活跃天数映射到 0~1；
+    /// 3) 闲置风险：连续闲置天数映射到 0~1。
+    /// 三项加权后得到综合健康度。
+    func healthSnapshot(for item: Item) -> ItemHealthSnapshot? {
+        guard item.status == .purchased else {
+            return nil
+        }
+
+        let idle = idleDays(for: item) ?? 0
+        let activeDays = activeDaysInLast30Days(for: item)
+        guard let dailyCost = dailyHoldingCostCents(for: item) else {
+            return nil
+        }
+
+        let assetScore = assetEfficiencyScore(dailyCostCents: dailyCost)
+        let activityScore = min(max(Double(activeDays) / 12.0, 0), 1)
+        let idleScore = idleRiskScore(idleDays: idle)
+        let overall = min(
+            max(
+                (assetScore * 0.34) + (activityScore * 0.33) + (idleScore * 0.33),
+                0
+            ),
+            1
+        )
+
+        return ItemHealthSnapshot(
+            overallScore: overall,
+            assetEfficiencyScore: assetScore,
+            activityScore: activityScore,
+            idleRiskScore: idleScore,
+            activeDaysIn30: activeDays,
+            idleDays: idle,
+            dailyHoldingCostCents: dailyCost
+        )
+    }
+
+    /// 获取综合健康度（0.0 ~ 1.0）。
+    func healthScore(for item: Item) -> Double {
+        healthSnapshot(for: item)?.overallScore ?? 0
+    }
+
+    /// 近 30 天活跃天数：按“自然日去重”统计，避免同一天多次打卡放大活跃度。
+    func activeDaysInLast30Days(for item: Item) -> Int {
+        guard item.status == .purchased else {
+            return 0
+        }
+
+        let today = calendar.startOfDay(for: nowProvider())
+        guard let windowStart = calendar.date(byAdding: .day, value: -29, to: today) else {
+            return 0
+        }
+
+        var dayBuckets = Set<Date>()
+        for record in item.usageRecords {
+            let day = calendar.startOfDay(for: record.usedAt)
+            if day >= windowStart && day <= today {
+                dayBuckets.insert(day)
+            }
+        }
+
+        // 兼容历史聚合数据：若旧数据仅维护了 usageCount / lastUsedAt，则兜底记为 1 天活跃。
+        if dayBuckets.isEmpty, item.usageCount > 0, let lastUsedAt = item.lastUsedAt {
+            let lastUsedDay = calendar.startOfDay(for: lastUsedAt)
+            if lastUsedDay >= windowStart && lastUsedDay <= today {
+                dayBuckets.insert(lastUsedDay)
+            }
+        }
+
+        return dayBuckets.count
+    }
+
+    /// 日均持有成本（分/天）：买入价越高、持有天数越少时，该值越高。
+    func dailyHoldingCostCents(for item: Item) -> Int? {
+        guard item.status == .purchased else {
+            return nil
+        }
+
+        let purchasePrice = max(item.purchasePriceCents ?? item.wishPriceCents, 1)
+        let holdingDays = max(holdingDaysSincePurchase(for: item), 1)
+        return max(1, purchasePrice / holdingDays)
+    }
+
     /// 计算吃灰天数（按自然日）。
     /// 优先使用最近一次使用时间；若从未使用则回退到购买时间。
     func idleDays(for item: Item) -> Int? {
@@ -170,19 +275,25 @@ final class ExtractorViewModel {
         }
 
         if item.usageCount == 0 {
-            return PurchasedStatusTag(text: "刚买未用", tone: .fresh)
+            return PurchasedStatusTag(text: "待开张", tone: .fresh)
         }
 
         let idle = idleDays(for: item) ?? 0
-        if idle >= 30 {
+        if idle >= 60 {
+            return PurchasedStatusTag(text: "建议转卖", tone: .resale)
+        } else if idle >= 30 {
             return PurchasedStatusTag(text: "重度吃灰", tone: .heavyIdle)
         } else if idle >= 14 {
             return PurchasedStatusTag(text: "中度吃灰", tone: .midIdle)
         } else if idle >= 7 {
             return PurchasedStatusTag(text: "轻度吃灰", tone: .lightIdle)
-        } else {
-            return PurchasedStatusTag(text: "持续使用中", tone: .active)
         }
+
+        let activeDays = activeDaysInLast30Days(for: item)
+        if activeDays >= 12 {
+            return PurchasedStatusTag(text: "高活跃", tone: .active)
+        }
+        return PurchasedStatusTag(text: "稳步使用", tone: .active)
     }
 
     /// 生成打卡成功反馈文案：根据“首次使用/回坑/持续使用”自动切换语气。
@@ -192,27 +303,44 @@ final class ExtractorViewModel {
         previousIdleDays: Int?,
         usedAt: Date
     ) -> CheckinCelebrationPayload {
+        let currentUsageCount = previousUsageCount + 1
+
         if previousUsageCount == 0 {
             let daysToFirstUse = firstUseDelayDays(for: item, usedAt: usedAt)
             if daysToFirstUse <= 1 {
+                let copy = AppConstants.RoastCopy.checkinFirstUseImmediateBundle()
                 return CheckinCelebrationPayload(
-                    title: "上手即开张，这波很会买",
-                    subtitle: "买完马上用，钱包看了都想给你点赞。",
-                    badge: "首战即用",
+                    title: copy.title,
+                    subtitle: copy.subtitle,
+                    badge: copy.badge,
+                    roastLine: AppConstants.RoastCopy.checkinCelebrationRoastLine(
+                        usageCount: currentUsageCount,
+                        isBigMoment: true
+                    ),
                     isBigMoment: true
                 )
             } else if daysToFirstUse >= 30 {
+                let copy = AppConstants.RoastCopy.checkinFirstUseLateBundle(daysToFirstUse: daysToFirstUse)
                 return CheckinCelebrationPayload(
-                    title: "吃灰一个月，终于被你救活",
-                    subtitle: "拖了 \(daysToFirstUse) 天才开封，但今天这下算是把面子挣回来了。",
-                    badge: "迟到首刷",
+                    title: copy.title,
+                    subtitle: copy.subtitle,
+                    badge: copy.badge,
+                    roastLine: AppConstants.RoastCopy.checkinCelebrationRoastLine(
+                        usageCount: currentUsageCount,
+                        isBigMoment: true
+                    ),
                     isBigMoment: true
                 )
             } else {
+                let copy = AppConstants.RoastCopy.checkinFirstUseNormalBundle()
                 return CheckinCelebrationPayload(
-                    title: "首次打卡到账",
-                    subtitle: "比继续落灰强太多，今天这一用很争气。",
-                    badge: "首次开封",
+                    title: copy.title,
+                    subtitle: copy.subtitle,
+                    badge: copy.badge,
+                    roastLine: AppConstants.RoastCopy.checkinCelebrationRoastLine(
+                        usageCount: currentUsageCount,
+                        isBigMoment: false
+                    ),
                     isBigMoment: false
                 )
             }
@@ -220,31 +348,51 @@ final class ExtractorViewModel {
 
         let idle = previousIdleDays ?? 0
         if idle >= 30 {
+            let copy = AppConstants.RoastCopy.checkinRevivalHeavyBundle(idleDays: idle)
             return CheckinCelebrationPayload(
-                title: "重度吃灰逆转成功",
-                subtitle: "沉寂 \(idle) 天后终于复活，资产没有白买。",
-                badge: "回坑成功",
+                title: copy.title,
+                subtitle: copy.subtitle,
+                badge: copy.badge,
+                roastLine: AppConstants.RoastCopy.checkinCelebrationRoastLine(
+                    usageCount: currentUsageCount,
+                    isBigMoment: true
+                ),
                 isBigMoment: true
             )
         } else if idle >= 14 {
+            let copy = AppConstants.RoastCopy.checkinRevivalMidBundle(idleDays: idle)
             return CheckinCelebrationPayload(
-                title: "拖延症被你反杀",
-                subtitle: "停摆 \(idle) 天后重启使用，这次继续连击别断。",
-                badge: "复活连击",
+                title: copy.title,
+                subtitle: copy.subtitle,
+                badge: copy.badge,
+                roastLine: AppConstants.RoastCopy.checkinCelebrationRoastLine(
+                    usageCount: currentUsageCount,
+                    isBigMoment: true
+                ),
                 isBigMoment: true
             )
         } else if idle <= 1 {
+            let copy = AppConstants.RoastCopy.checkinSteadyBundle()
             return CheckinCelebrationPayload(
-                title: "节奏在线，成本在掉",
-                subtitle: "你在稳定输出，单次成本正在被你按着打。",
-                badge: "稳定输出",
+                title: copy.title,
+                subtitle: copy.subtitle,
+                badge: copy.badge,
+                roastLine: AppConstants.RoastCopy.checkinCelebrationRoastLine(
+                    usageCount: currentUsageCount,
+                    isBigMoment: false
+                ),
                 isBigMoment: false
             )
         } else {
+            let copy = AppConstants.RoastCopy.checkinNormalBundle()
             return CheckinCelebrationPayload(
-                title: "今日打卡，继续回血",
-                subtitle: "这波使用很关键，你又把冲动消费扳回一城。",
-                badge: "今日 +1",
+                title: copy.title,
+                subtitle: copy.subtitle,
+                badge: copy.badge,
+                roastLine: AppConstants.RoastCopy.checkinCelebrationRoastLine(
+                    usageCount: currentUsageCount,
+                    isBigMoment: false
+                ),
                 isBigMoment: false
             )
         }
@@ -266,5 +414,40 @@ final class ExtractorViewModel {
         let usedStart = calendar.startOfDay(for: usedAt)
         let value = calendar.dateComponents([.day], from: purchaseStart, to: usedStart).day ?? 0
         return max(0, value)
+    }
+
+    /// 从购买到今天的持有天数（至少 1 天）。
+    private func holdingDaysSincePurchase(for item: Item) -> Int {
+        let baseDate = item.purchaseAt ?? item.createdAt
+        let baseStart = calendar.startOfDay(for: baseDate)
+        let todayStart = calendar.startOfDay(for: nowProvider())
+        let raw = calendar.dateComponents([.day], from: baseStart, to: todayStart).day ?? 0
+        return max(1, raw + 1)
+    }
+
+    /// 资产效率映射：日均持有成本越低，效率分越高。
+    /// 基准值使用 15 元/天（1500 分/天），可按后续真实数据再调整。
+    private func assetEfficiencyScore(dailyCostCents: Int) -> Double {
+        let baselineDailyCost = 1500.0
+        let ratio = Double(dailyCostCents) / baselineDailyCost
+        return min(max(1.0 / (1.0 + ratio), 0), 1)
+    }
+
+    /// 闲置风险映射：连续闲置越久，分值越低。
+    private func idleRiskScore(idleDays: Int) -> Double {
+        switch idleDays {
+        case ..<3:
+            return 1.0
+        case 3..<7:
+            return 0.82
+        case 7..<14:
+            return 0.62
+        case 14..<30:
+            return 0.38
+        case 30..<60:
+            return 0.18
+        default:
+            return 0.05
+        }
     }
 }

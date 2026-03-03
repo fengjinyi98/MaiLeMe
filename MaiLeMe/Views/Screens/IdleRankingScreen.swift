@@ -54,30 +54,40 @@ struct IdleRankingScreen: View {
 
     /// 单行排行卡片。
     private func rankCard(rank: Int, item: Item) -> some View {
-        GlassCardView(accent: AppTheme.Palette.warning) {
-            HStack(alignment: .center, spacing: 12) {
-                Text("#\(rank)")
-                    .font(.headline.bold())
-                    .foregroundStyle(rankTint(rank))
-                    .frame(width: 42)
+        NavigationLink {
+            IdleRescueScreen(item: item, viewModel: viewModel)
+        } label: {
+            GlassCardView(accent: AppTheme.Palette.warning) {
+                HStack(alignment: .center, spacing: 12) {
+                    Text("#\(rank)")
+                        .font(.headline.bold())
+                        .foregroundStyle(rankTint(rank))
+                        .frame(width: 42)
 
-                ItemThumbnailView(imageData: item.coverImageData, size: 46, cornerRadius: 10)
+                    ItemThumbnailView(imageData: item.coverImageData, size: 46, cornerRadius: 10)
 
-                VStack(alignment: .leading, spacing: 4) {
-                    Text(item.displayName)
-                        .foregroundStyle(AppTheme.Palette.primaryText)
-                    Text("最近使用：\(formattedLatestUsage(for: item))")
-                        .font(.caption)
-                        .foregroundStyle(AppTheme.Palette.tertiaryText)
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text(item.displayName)
+                            .foregroundStyle(AppTheme.Palette.primaryText)
+                        Text("最近使用：\(formattedLatestUsage(for: item))")
+                            .font(.caption)
+                            .foregroundStyle(AppTheme.Palette.tertiaryText)
+                    }
+
+                    Spacer()
+
+                    VStack(alignment: .trailing, spacing: 4) {
+                        Text("\(viewModel.idleDays(for: item) ?? 0) 天")
+                            .font(.headline)
+                            .foregroundStyle(AppTheme.Palette.warning)
+                        Image(systemName: "chevron.right")
+                            .font(.caption.bold())
+                            .foregroundStyle(AppTheme.Palette.tertiaryText)
+                    }
                 }
-
-                Spacer()
-
-                Text("\(viewModel.idleDays(for: item) ?? 0) 天")
-                    .font(.headline)
-                    .foregroundStyle(AppTheme.Palette.warning)
             }
         }
+        .buttonStyle(.plain)
     }
 
     /// 根据名次返回不同主色。

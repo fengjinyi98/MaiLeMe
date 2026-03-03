@@ -10,6 +10,7 @@ import SwiftUI
 /// 小黑屋条目详情页：支持查看状态、执行决策与删除。
 struct WishItemDetailScreen: View {
     @Environment(\.dismiss) private var dismiss
+    @EnvironmentObject private var navigationState: AppNavigationState
 
     let item: Item
     let viewModel: DarkRoomViewModel
@@ -103,8 +104,8 @@ struct WishItemDetailScreen: View {
             hasAppeared = true
         }
         .fullScreenCover(item: $decisionCelebration) { snapshot in
-            DecisionCelebrationFullScreen(snapshot: snapshot) {
-                completeDecisionFlow()
+            DecisionCelebrationFullScreen(snapshot: snapshot) { action in
+                completeDecisionFlow(action: action)
             }
             .interactiveDismissDisabled(true)
         }
@@ -162,12 +163,12 @@ struct WishItemDetailScreen: View {
                     .font(.headline)
                     .foregroundStyle(AppTheme.Palette.primaryText)
 
-                timelineRow(title: "录入时间", value: item.createdAt.zhDateTimeString())
+                timelineRow(title: "冲动时刻", value: item.createdAt.zhDateTimeString())
                 if let cooldownEndAt = item.cooldownEndAt {
-                    timelineRow(title: "冷静结束", value: cooldownEndAt.zhDateTimeString())
+                    timelineRow(title: "解禁时刻", value: cooldownEndAt.zhDateTimeString())
                 }
                 if let decisionAt = item.decisionAt {
-                    timelineRow(title: "决策时间", value: decisionAt.zhDateTimeString())
+                    timelineRow(title: "审判结果", value: decisionAt.zhDateTimeString())
                 }
             }
         }
@@ -314,7 +315,7 @@ struct WishItemDetailScreen: View {
     /// 状态标签样式。
     private func statusTag(text: String, tint: Color) -> some View {
         Text(text)
-            .font(.caption.weight(.medium))
+            .font(.caption.weight(.heavy)) // 多邻国风格：重字重
             .padding(.horizontal, 10)
             .padding(.vertical, 5)
             .background(
@@ -323,7 +324,7 @@ struct WishItemDetailScreen: View {
             )
             .overlay(
                 Capsule()
-                    .stroke(tint.opacity(0.52), lineWidth: 1)
+                    .stroke(tint.opacity(0.8), lineWidth: 2) // 多邻国风格：粗边框
             )
             .foregroundStyle(tint)
     }
@@ -354,9 +355,12 @@ struct WishItemDetailScreen: View {
         )
     }
 
-    /// 结束决策流程：关闭庆祝页并返回上一页。
-    private func completeDecisionFlow() {
+    /// 结束决策流程：根据按钮意图决定仅返回，或直达榨干机打卡页。
+    private func completeDecisionFlow(action: DecisionCelebrationContinueAction) {
         decisionCelebration = nil
+        if action == .goToExtractorCheckin {
+            navigationState.routeToExtractorCheckin(itemID: item.id)
+        }
         dismiss()
     }
 }

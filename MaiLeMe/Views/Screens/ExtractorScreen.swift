@@ -11,11 +11,13 @@ import SwiftData
 /// 闲置榨干机主页面：卡片化看板 + 详情跳转 + 删除确认与撤销。
 struct ExtractorScreen: View {
     @Environment(\.modelContext) private var modelContext
+    @EnvironmentObject private var navigationState: AppNavigationState
     @Query(sort: \Item.createdAt, order: .reverse) private var allItems: [Item]
 
     @State private var errorMessage: String?
     @State private var itemPendingDeletion: Item?
     @State private var hasAppeared = false
+    @State private var navigationPath = NavigationPath()
 
     /// 最近删除快照，用于撤销。
     @State private var pendingUndoSnapshot: ItemSnapshot?
@@ -36,12 +38,14 @@ struct ExtractorScreen: View {
         viewModel.topIdleItems(from: allItems, limit: 3)
     }
 
-    private var averageProgress: Double {
-        let progresses = purchasedItems.compactMap { viewModel.paybackProgress(for: $0) }
-        guard !progresses.isEmpty else {
+    private var averageHealthScore: Double {
+        guard !purchasedItems.isEmpty else {
             return 0
         }
-        return progresses.reduce(0, +) / Double(progresses.count)
+        let total = purchasedItems
+            .map { viewModel.healthScore(for: $0) }
+            .reduce(0, +)
+        return total / Double(purchasedItems.count)
     }
 
     private var highRiskIdleCount: Int {
@@ -49,7 +53,7 @@ struct ExtractorScreen: View {
     }
 
     var body: some View {
-        NavigationStack {
+        NavigationStack(path: $navigationPath) {
             ZStack {
                 AuroraBackgroundView()
 
@@ -131,13 +135,37 @@ struct ExtractorScreen: View {
             } message: {
                 Text(errorMessage ?? "未知错误")
             }
+            .navigationDestination(for: UUID.self) { itemID in
+                if let item = purchasedItems.first(where: { $0.id == itemID }) {
+                    ExtractorItemDetailScreen(
+                        item: item,
+                        viewModel: viewModel,
+                        onDelete: { target in
+                            performDelete(target)
+                        }
+                    )
+                } else {
+                    Text("目标物品不存在或已删除")
+                        .foregroundStyle(AppTheme.Palette.secondaryText)
+                }
+            }
             .onAppear {
                 hasAppeared = true
+                consumePendingCheckinRouteIfPossible()
+            }
+            .onChange(of: navigationState.pendingExtractorItemID, initial: true) { _, _ in
+                consumePendingCheckinRouteIfPossible()
+            }
+            .onChange(of: purchasedItems.map(\.id), initial: false) { _, _ in
+                consumePendingCheckinRouteIfPossible()
+            }
+            .onChange(of: navigationState.selectedTab, initial: false) { _, _ in
+                consumePendingCheckinRouteIfPossible()
             }
         }
     }
 
-    /// 顶部总览卡片：展示榨干效率与风险数量。
+    /// 顶部总览卡片：展示资产健康水平与风险数量。
     private var summaryHero: some View {
         GlassCardView(accent: AppTheme.Palette.success, padding: 18) {
             VStack(alignment: .leading, spacing: 14) {
@@ -155,7 +183,7 @@ struct ExtractorScreen: View {
                     .foregroundStyle(AppTheme.Palette.secondaryText)
 
                 HStack {
-                    heroMetric(title: "平均回本", value: "\(Int(averageProgress * 100))%", tint: AppTheme.Palette.success)
+                    heroMetric(title: "平均健康", value: "\(Int((averageHealthScore * 100).rounded()))%", tint: AppTheme.Palette.success)
                     Spacer()
                     heroMetric(title: "高风险吃灰", value: "\(highRiskIdleCount)", tint: AppTheme.Palette.warning)
                     Spacer()
@@ -207,12 +235,12 @@ struct ExtractorScreen: View {
                 ProgressBoardScreen()
             } label: {
                 dashboardWideCard(
-                    title: "平均回本进度",
+                    title: "平均资产健康度",
                     value: "已追踪 \(purchasedItems.count) 件",
-                    subtitle: "查看全部回本进度板",
+                    subtitle: "查看全部资产健康板",
                     icon: "chart.line.uptrend.xyaxis",
                     tint: AppTheme.Palette.cooling,
-                    progress: averageProgress
+                    progress: averageHealthScore
                 )
             }
             .buttonStyle(.plain)
@@ -221,18 +249,11 @@ struct ExtractorScreen: View {
 
     /// 已购物品卡片，支持进入详情页。
     private func purchasedCard(_ item: Item) -> some View {
-        let progress = viewModel.paybackProgress(for: item) ?? 0
+        let healthScore = viewModel.healthScore(for: item)
+        let healthTint = healthTint(for: healthScore)
 
-        return NavigationLink {
-            ExtractorItemDetailScreen(
-                item: item,
-                viewModel: viewModel,
-                onDelete: { target in
-                    performDelete(target)
-                }
-            )
-        } label: {
-            GlassCardView(accent: AppTheme.Palette.success) {
+        return NavigationLink(value: item.id) {
+            GlassCardView(accent: healthTint) {
                 VStack(alignment: .leading, spacing: 12) {
                     HStack(alignment: .top, spacing: 12) {
                         ItemThumbnailView(imageData: item.coverImageData, size: 56, cornerRadius: 12)
@@ -281,7 +302,7 @@ struct ExtractorScreen: View {
                     }
 
                     HStack {
-                        Text("回本进度")
+                        Text("资产健康度")
                             .font(.caption)
                             .foregroundStyle(AppTheme.Palette.tertiaryText)
                         Spacer()
@@ -290,7 +311,7 @@ struct ExtractorScreen: View {
                             .foregroundStyle(AppTheme.Palette.tertiaryText)
                     }
 
-                    ProgressBarView(progress: progress, tintColor: AppTheme.Palette.success, height: 14)
+                    ProgressBarView(progress: healthScore, tintColor: healthTint, height: 14)
                         .frame(height: 14)
                 }
             }
@@ -303,6 +324,23 @@ struct ExtractorScreen: View {
                 Label("删除", systemImage: "trash")
             }
         }
+    }
+
+    /// 消费跨 Tab 跳转请求：切到榨干机后直接打开目标物品详情页。
+    private func consumePendingCheckinRouteIfPossible() {
+        guard navigationState.selectedTab == .extractor else {
+            return
+        }
+        guard let targetID = navigationState.pendingExtractorItemID else {
+            return
+        }
+        guard purchasedItems.contains(where: { $0.id == targetID }) else {
+            return
+        }
+
+        navigationState.pendingExtractorItemID = nil
+        navigationPath = NavigationPath()
+        navigationPath.append(targetID)
     }
 
     /// Top3 卡片样式。
@@ -319,30 +357,40 @@ struct ExtractorScreen: View {
             medalColor = AppTheme.Palette.tertiaryText
         }
 
-        return GlassCardView(accent: AppTheme.Palette.warning) {
-            HStack(spacing: 12) {
-                Text("#\(index)")
-                    .font(.headline.bold())
-                    .foregroundStyle(medalColor)
-                    .frame(width: 34)
+        return NavigationLink {
+            IdleRescueScreen(item: item, viewModel: viewModel)
+        } label: {
+            GlassCardView(accent: AppTheme.Palette.warning) {
+                HStack(spacing: 12) {
+                    Text("#\(index)")
+                        .font(.headline.bold())
+                        .foregroundStyle(medalColor)
+                        .frame(width: 34)
 
-                ItemThumbnailView(imageData: item.coverImageData, size: 44, cornerRadius: 10)
+                    ItemThumbnailView(imageData: item.coverImageData, size: 44, cornerRadius: 10)
 
-                VStack(alignment: .leading, spacing: 4) {
-                    Text(item.displayName)
-                        .foregroundStyle(AppTheme.Palette.primaryText)
-                    Text("最近使用：\(formattedLatestUsage(for: item))")
-                        .font(.caption)
-                        .foregroundStyle(AppTheme.Palette.tertiaryText)
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text(item.displayName)
+                            .foregroundStyle(AppTheme.Palette.primaryText)
+                        Text("最近使用：\(formattedLatestUsage(for: item))")
+                            .font(.caption)
+                            .foregroundStyle(AppTheme.Palette.tertiaryText)
+                    }
+
+                    Spacer()
+
+                    VStack(alignment: .trailing, spacing: 4) {
+                        Text("\(viewModel.idleDays(for: item) ?? 0) 天")
+                            .font(.headline)
+                            .foregroundStyle(AppTheme.Palette.warning)
+                        Image(systemName: "chevron.right")
+                            .font(.caption.bold())
+                            .foregroundStyle(AppTheme.Palette.tertiaryText)
+                    }
                 }
-
-                Spacer()
-
-                Text("\(viewModel.idleDays(for: item) ?? 0) 天")
-                    .font(.headline)
-                    .foregroundStyle(AppTheme.Palette.warning)
             }
         }
+        .buttonStyle(.plain)
     }
 
     /// 半宽看板卡片样式。
@@ -577,6 +625,8 @@ struct ExtractorScreen: View {
             tint = AppTheme.Palette.warning
         case .heavyIdle:
             tint = Color(red: 0.86, green: 0.28, blue: 0.25)
+        case .resale:
+            tint = Color(red: 0.86, green: 0.20, blue: 0.36)
         }
 
         return Text(status.text)
@@ -592,6 +642,17 @@ struct ExtractorScreen: View {
                 Capsule()
                     .stroke(tint.opacity(0.44), lineWidth: 1)
             )
+    }
+
+    /// 根据健康度返回进度条主色，低分更偏预警色。
+    private func healthTint(for score: Double) -> Color {
+        if score >= 0.75 {
+            return AppTheme.Palette.success
+        } else if score >= 0.45 {
+            return AppTheme.Palette.cooling
+        } else {
+            return AppTheme.Palette.warning
+        }
     }
 }
 

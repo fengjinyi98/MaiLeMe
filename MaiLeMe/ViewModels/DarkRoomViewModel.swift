@@ -24,6 +24,7 @@ enum DarkRoomCelebrationTone {
 struct DarkRoomDecisionCelebrationPayload {
     let title: String
     let subtitle: String
+    let roastLine: String
     let badge: String
     let iconSystemName: String
     let metricTitle: String
@@ -138,26 +139,30 @@ final class DarkRoomViewModel {
         switch outcome {
         case .saved:
             let savedCents = max(item.savedAmountCents, item.wishPriceCents)
+            let copy = AppConstants.RoastCopy.decisionSavedBundle()
             return DarkRoomDecisionCelebrationPayload(
-                title: "理性胜利，冲动当场下线",
-                subtitle: "你把“想买”变成了“省下”，这波自控力可以发朋友圈。",
+                title: copy.title,
+                subtitle: copy.subtitle,
+                roastLine: AppConstants.RoastCopy.decisionCelebrationRoastLine(isSaved: true),
                 badge: "忍住没买",
                 iconSystemName: "shield.checkered",
                 metricTitle: "省下金额",
                 metricValue: "¥\(centsToYuan(savedCents))",
-                actionTitle: "继续克制",
+                actionTitle: copy.actionTitle,
                 tone: .saved
             )
         case .purchased:
             let purchaseCents = item.purchasePriceCents ?? item.wishPriceCents
+            let copy = AppConstants.RoastCopy.decisionPurchasedBundle()
             return DarkRoomDecisionCelebrationPayload(
-                title: "决策已落地，接下来拼回本",
-                subtitle: "既然买了就狠狠干活，别让它有机会继续吃灰。",
+                title: copy.title,
+                subtitle: copy.subtitle,
+                roastLine: AppConstants.RoastCopy.decisionCelebrationRoastLine(isSaved: false),
                 badge: "还是买了",
                 iconSystemName: "cart.fill.badge.plus",
                 metricTitle: "买入金额",
                 metricValue: "¥\(centsToYuan(purchaseCents))",
-                actionTitle: "去榨干机打卡",
+                actionTitle: copy.actionTitle,
                 tone: .purchased
             )
         }

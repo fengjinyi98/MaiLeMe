@@ -8,7 +8,7 @@
 import SwiftUI
 import SwiftData
 
-/// 榨干机物品详情页：展示 ROI、打卡历史并支持删除。
+/// 榨干机物品详情页：展示资产健康度、打卡历史并支持删除。
 struct ExtractorItemDetailScreen: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
@@ -30,8 +30,29 @@ struct ExtractorItemDetailScreen: View {
         item.usageRecords.sorted(by: { $0.usedAt > $1.usedAt })
     }
 
-    private var paybackProgress: Double {
-        viewModel.paybackProgress(for: item) ?? 0
+    /// 当前资产健康快照。
+    private var healthSnapshot: ItemHealthSnapshot? {
+        viewModel.healthSnapshot(for: item)
+    }
+
+    /// 综合健康度（0.0 ~ 1.0）。
+    private var healthScore: Double {
+        healthSnapshot?.overallScore ?? 0
+    }
+
+    /// 当前吃灰天数。
+    private var idleDays: Int {
+        viewModel.idleDays(for: item) ?? 0
+    }
+
+    /// 是否属于高健康状态。
+    private var isHighHealth: Bool {
+        healthScore >= 0.8
+    }
+
+    /// 是否需要展示“去吃灰挽救”入口。
+    private var shouldShowRescueAction: Bool {
+        idleDays >= AppConstants.Notification.lightIdleDays
     }
 
     var body: some View {
@@ -117,6 +138,7 @@ struct ExtractorItemDetailScreen: View {
                     Spacer()
                     VStack(alignment: .trailing, spacing: 6) {
                         purchasedStatusTagView
+                        healthScoreTagView
                         Text("打卡 \(item.usageCount)")
                             .font(.caption.bold())
                             .foregroundStyle(AppTheme.Palette.cooling)
@@ -132,41 +154,59 @@ struct ExtractorItemDetailScreen: View {
                 HStack {
                     metric(label: "买入价", value: "¥\(centsToYuan(item.purchasePriceCents ?? item.wishPriceCents))")
                     Spacer(minLength: 12)
-                    metric(label: "吃灰天数", value: "\(viewModel.idleDays(for: item) ?? 0) 天")
+                    metric(label: "吃灰天数", value: "\(idleDays) 天")
                 }
 
                 Text("点击图片可看大图，长按可更换图片。")
                     .font(.caption2)
                     .foregroundStyle(AppTheme.Palette.tertiaryText)
 
-                ProgressBarView(progress: paybackProgress, tintColor: AppTheme.Palette.success, height: 16)
+                ProgressBarView(progress: healthScore, tintColor: healthTint(for: healthScore), height: 16)
                     .frame(height: 16)
             }
         }
     }
 
-    /// 成本与进度卡：展示 ROI 关键计算。
+    /// 健康度拆解卡：展示“资产效率 + 活跃 + 闲置风险”来源。
     private var metricCard: some View {
         GlassCardView(accent: AppTheme.Palette.cooling) {
             VStack(alignment: .leading, spacing: 12) {
-                Text("ROI 指标")
+                Text("健康度拆解")
                     .font(.headline)
                     .foregroundStyle(AppTheme.Palette.primaryText)
 
                 metricRow(
-                    title: "当前单次成本",
-                    value: viewModel.currentCostPerUseCents(for: item).map { "¥\(centsToYuan($0))" } ?? "未使用"
+                    title: "综合健康度",
+                    value: "\(Int((healthScore * 100).rounded()))%"
                 )
 
                 metricRow(
-                    title: "目标单次成本",
-                    value: item.targetCostPerUseCents.map { "¥\(centsToYuan($0))" } ?? "未设置"
+                    title: "日均持有成本",
+                    value: viewModel.dailyHoldingCostCents(for: item).map { "¥\(centsToYuan($0))/天" } ?? "暂无"
                 )
 
                 metricRow(
-                    title: "最近使用",
-                    value: (item.lastUsedAt ?? item.purchaseAt)?.zhDateTimeString() ?? "无记录"
+                    title: "近30天活跃",
+                    value: "\(healthSnapshot?.activeDaysIn30 ?? 0) 天"
                 )
+
+                metricRow(title: "连续闲置", value: "\(idleDays) 天")
+
+                scoreBreakdownRow(title: "资产效率", score: healthSnapshot?.assetEfficiencyScore ?? 0, tint: AppTheme.Palette.cooling)
+                scoreBreakdownRow(title: "使用活跃", score: healthSnapshot?.activityScore ?? 0, tint: AppTheme.Palette.success)
+                scoreBreakdownRow(title: "闲置风险", score: healthSnapshot?.idleRiskScore ?? 0, tint: AppTheme.Palette.warning)
+
+                if item.targetCostPerUseCents != nil {
+                    Divider()
+                    metricRow(
+                        title: "当前单次成本",
+                        value: viewModel.currentCostPerUseCents(for: item).map { "¥\(centsToYuan($0))" } ?? "未使用"
+                    )
+                    metricRow(
+                        title: "目标单次成本",
+                        value: item.targetCostPerUseCents.map { "¥\(centsToYuan($0))" } ?? "未设置"
+                    )
+                }
 
                 HStack(spacing: 10) {
                     Button {
@@ -184,6 +224,24 @@ struct ExtractorItemDetailScreen: View {
                             .frame(maxWidth: .infinity)
                     }
                     .buttonStyle(SolidActionButtonStyle(tint: AppTheme.Palette.cooling))
+                }
+
+                if shouldShowRescueAction {
+                    NavigationLink {
+                        IdleRescueScreen(item: item, viewModel: viewModel)
+                    } label: {
+                        Label("已吃灰 \(idleDays) 天，去吃灰挽救", systemImage: "flame.fill")
+                            .frame(maxWidth: .infinity)
+                    }
+                    .buttonStyle(SolidActionButtonStyle(tint: AppTheme.Palette.warning))
+                } else if isHighHealth {
+                    Text("状态很稳，继续保持就能把冲动消费伤害降到最低。")
+                        .font(.caption)
+                        .foregroundStyle(AppTheme.Palette.success)
+                } else {
+                    Text("当前活跃度还不够，建议本周至少再打卡 2~3 次把健康度拉上来。")
+                        .font(.caption)
+                        .foregroundStyle(AppTheme.Palette.tertiaryText)
                 }
             }
         }
@@ -428,7 +486,6 @@ struct ExtractorItemDetailScreen: View {
         String(format: "%.2f", Double(cents) / 100.0)
     }
 
-    /// 已购物品动态状态标签。
     private var purchasedStatusTagView: some View {
         let status = viewModel.purchasedStatusTag(for: item)
         let tint: Color
@@ -443,10 +500,12 @@ struct ExtractorItemDetailScreen: View {
             tint = AppTheme.Palette.warning
         case .heavyIdle:
             tint = Color(red: 0.86, green: 0.28, blue: 0.25)
+        case .resale:
+            tint = Color(red: 0.86, green: 0.20, blue: 0.36)
         }
 
         return Text(status.text)
-            .font(.caption.weight(.semibold))
+            .font(.caption.weight(.heavy)) // 多邻国风格：更重的字重
             .foregroundStyle(tint)
             .padding(.horizontal, 9)
             .padding(.vertical, 4)
@@ -456,8 +515,55 @@ struct ExtractorItemDetailScreen: View {
             )
             .overlay(
                 Capsule()
-                    .stroke(tint.opacity(0.44), lineWidth: 1)
+                    .stroke(tint.opacity(0.8), lineWidth: 2) // 多邻国风格：显眼的粗线条
             )
+    }
+
+    /// 健康度标签：显示当前综合分值。
+    private var healthScoreTagView: some View {
+        let tint = healthTint(for: healthScore)
+        return Text("健康 \(Int((healthScore * 100).rounded()))%")
+            .font(.caption.weight(.heavy))
+            .foregroundStyle(tint)
+            .padding(.horizontal, 9)
+            .padding(.vertical, 4)
+            .background(
+                Capsule()
+                    .fill(tint.opacity(0.14))
+            )
+            .overlay(
+                Capsule()
+                    .stroke(tint.opacity(0.8), lineWidth: 2)
+            )
+    }
+
+    /// 三项评分子行：展示单项百分比与进度条。
+    private func scoreBreakdownRow(title: String, score: Double, tint: Color) -> some View {
+        VStack(alignment: .leading, spacing: 6) {
+            HStack {
+                Text(title)
+                    .font(.caption)
+                    .foregroundStyle(AppTheme.Palette.secondaryText)
+                Spacer()
+                Text("\(Int((score * 100).rounded()))%")
+                    .font(.caption.weight(.bold))
+                    .foregroundStyle(AppTheme.Palette.primaryText)
+            }
+
+            ProgressBarView(progress: score, tintColor: tint, height: 10)
+                .frame(height: 10)
+        }
+    }
+
+    /// 根据健康度返回主题色，低分更偏预警。
+    private func healthTint(for score: Double) -> Color {
+        if score >= 0.75 {
+            return AppTheme.Palette.success
+        } else if score >= 0.45 {
+            return AppTheme.Palette.cooling
+        } else {
+            return AppTheme.Palette.warning
+        }
     }
 
     /// 展示打卡成功仪式页（全屏版）。

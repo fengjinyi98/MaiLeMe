@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import UIKit
 
 /// 榨干机打卡庆祝页快照：用于 `fullScreenCover(item:)`。
 struct CheckinCelebrationSnapshot: Identifiable {
@@ -37,37 +38,20 @@ struct CheckinCelebrationFullScreen: View {
     @State private var confettiReady = false
     @State private var breathing = false
     @State private var didComplete = false
+    @State private var posterSnapshot: CelebrationPosterSnapshot?
 
     private var accent: Color {
         snapshot.payload.isBigMoment ? AppTheme.Palette.warning : AppTheme.Palette.success
     }
 
-    /// 毒舌点评：用于强化仪式感与传播欲。
-    private var roastLine: String {
-        if snapshot.usageCount == 1 {
-            return "首刷到账，这件东西终于不是家里最贵摆件了。"
-        }
-        if snapshot.payload.isBigMoment {
-            return "你把吃灰库存救回来了，这波比捡钱还狠。"
-        }
-        if snapshot.usageCount >= 30 {
-            return "打卡强度离谱，物品都怕你不给它下班。"
-        }
-        return "继续连击，别让它回到“买前刚需、买后装饰”的老路。"
-    }
-
     /// 分享文本：用于外部平台传播。
     private var shareText: String {
-        """
-        我在「买了么」完成一次榨干机打卡：
-        物品：\(snapshot.itemName)
-        累计打卡：\(snapshot.usageCount) 次
-        当前单次成本：\(snapshot.currentCostText)
-
-        毒舌点评：\(roastLine)
-        你也来试试，别让买过的东西继续吃灰。
-        #买了么 #反冲动消费 #闲置榨干机
-        """
+        AppConstants.RoastCopy.checkinShareText(
+            itemName: snapshot.itemName,
+            usageCount: snapshot.usageCount,
+            currentCostText: snapshot.currentCostText,
+            roastLine: snapshot.payload.roastLine
+        )
     }
 
     var body: some View {
@@ -84,7 +68,6 @@ struct CheckinCelebrationFullScreen: View {
 
                 CelebrationHero3DView(
                     accent: accent,
-                    iconSystemName: "sparkles",
                     imageData: snapshot.imageData,
                     isVisible: showHero,
                     isBreathing: breathing
@@ -105,12 +88,17 @@ struct CheckinCelebrationFullScreen: View {
                         .font(.system(size: 34, weight: .black, design: .rounded))
                         .foregroundStyle(.white)
                         .multilineTextAlignment(.center)
+                        .lineLimit(2)
+                        .minimumScaleFactor(0.76)
+                        .fixedSize(horizontal: false, vertical: true)
                         .shadow(color: Color.black.opacity(0.2), radius: 12, x: 0, y: 4)
 
                     Text(snapshot.payload.subtitle)
                         .font(.headline)
                         .foregroundStyle(.white.opacity(0.88))
                         .multilineTextAlignment(.center)
+                        .lineLimit(3)
+                        .fixedSize(horizontal: false, vertical: true)
 
                     Text(snapshot.itemName)
                         .font(.subheadline.weight(.semibold))
@@ -128,18 +116,16 @@ struct CheckinCelebrationFullScreen: View {
                 .opacity(showMetrics ? 1 : 0)
                 .offset(y: showMetrics ? 0 : 16)
 
-                CelebrationRoastCard(title: "毒舌点评", line: roastLine)
+                CelebrationRoastCard(title: "毒舌点评", line: snapshot.payload.roastLine)
                     .opacity(showMetrics ? 1 : 0)
                     .offset(y: showMetrics ? 0 : 20)
 
                 if showButton {
                     VStack(spacing: 10) {
-                        ShareLink(
-                            item: shareText,
-                            subject: Text("我的买了么战报"),
-                            message: Text("来和我比比，谁更会反向消费。")
-                        ) {
-                            Label("分享战报去裂变", systemImage: "square.and.arrow.up.fill")
+                        Button {
+                            generatePoster()
+                        } label: {
+                            Label("生成专属海报", systemImage: "sparkles")
                                 .font(.headline.weight(.bold))
                                 .foregroundStyle(.white)
                                 .frame(maxWidth: .infinity)
@@ -177,6 +163,44 @@ struct CheckinCelebrationFullScreen: View {
         .ignoresSafeArea()
         .onAppear {
             startSequence()
+        }
+        .overlay {
+            if let snapshot = posterSnapshot {
+                CelebrationPosterPreviewScreen(snapshot: snapshot) {
+                    withAnimation(.spring(response: 0.38, dampingFraction: 0.84)) {
+                        posterSnapshot = nil
+                    }
+                }
+                .transition(.move(edge: .bottom).combined(with: .opacity))
+                .zIndex(10)
+            }
+        }
+    }
+
+    @MainActor
+    private func generatePoster() {
+        guard let image = renderPosterImage(
+            accent: accent,
+            badge: snapshot.payload.badge,
+            title: snapshot.payload.title,
+            itemName: snapshot.itemName,
+            imageData: snapshot.imageData,
+            roastLine: snapshot.payload.roastLine,
+            metric1Title: "累计打卡",
+            metric1Value: "\(snapshot.usageCount)",
+            metric2Title: "单次成本",
+            metric2Value: snapshot.currentCostText
+        ) else {
+            return
+        }
+
+        withAnimation(.spring(response: 0.38, dampingFraction: 0.84)) {
+            self.posterSnapshot = CelebrationPosterSnapshot(
+                image: image,
+                shareText: shareText,
+                accent: accent,
+                title: "榨干战报海报"
+            )
         }
     }
 
@@ -220,10 +244,16 @@ struct CheckinCelebrationFullScreen: View {
     }
 }
 
+/// 决策庆祝页“继续”按钮的路由意图。
+enum DecisionCelebrationContinueAction {
+    case close
+    case goToExtractorCheckin
+}
+
 /// 小黑屋决策后的全屏仪式页：统一“忍住没买 / 还是买了”两条路径。
 struct DecisionCelebrationFullScreen: View {
     let snapshot: DecisionCelebrationSnapshot
-    let onComplete: () -> Void
+    let onComplete: (DecisionCelebrationContinueAction) -> Void
 
     @State private var showHero = false
     @State private var showText = false
@@ -232,6 +262,7 @@ struct DecisionCelebrationFullScreen: View {
     @State private var confettiReady = false
     @State private var breathing = false
     @State private var didComplete = false
+    @State private var posterSnapshot: CelebrationPosterSnapshot?
 
     private var accent: Color {
         switch snapshot.payload.tone {
@@ -242,36 +273,15 @@ struct DecisionCelebrationFullScreen: View {
         }
     }
 
-    /// 决策毒舌点评。
-    private var roastLine: String {
-        switch snapshot.payload.tone {
-        case .saved:
-            return "你的理性刚刚全票通过，冲动消费被请出群聊。"
-        case .purchased:
-            return "既然买了就狠狠干活，下次见面只接受“已回本”。"
-        }
-    }
-
     /// 决策分享文本。
     private var shareText: String {
-        let outcomeLine: String
-        switch snapshot.payload.tone {
-        case .saved:
-            outcomeLine = "我在小黑屋成功忍住没买，直接省下一笔。"
-        case .purchased:
-            outcomeLine = "我在小黑屋完成决策购买，接下来进入榨干模式。"
-        }
-
-        return """
-        我在「买了么」完成一次冷静期决策：
-        物品：\(snapshot.itemName)
-        结果：\(outcomeLine)
-        关键数据：\(snapshot.payload.metricTitle) \(snapshot.payload.metricValue)
-
-        毒舌点评：\(roastLine)
-        你也来挑战下自己的冲动消费。
-        #买了么 #冷静期挑战 #理性消费
-        """
+        AppConstants.RoastCopy.decisionShareText(
+            itemName: snapshot.itemName,
+            isSaved: snapshot.payload.tone == .saved,
+            metricTitle: snapshot.payload.metricTitle,
+            metricValue: snapshot.payload.metricValue,
+            roastLine: snapshot.payload.roastLine
+        )
     }
 
     var body: some View {
@@ -288,7 +298,6 @@ struct DecisionCelebrationFullScreen: View {
 
                 CelebrationHero3DView(
                     accent: accent,
-                    iconSystemName: snapshot.payload.iconSystemName,
                     imageData: snapshot.imageData,
                     isVisible: showHero,
                     isBreathing: breathing
@@ -309,12 +318,17 @@ struct DecisionCelebrationFullScreen: View {
                         .font(.system(size: 34, weight: .black, design: .rounded))
                         .foregroundStyle(.white)
                         .multilineTextAlignment(.center)
+                        .lineLimit(2)
+                        .minimumScaleFactor(0.76)
+                        .fixedSize(horizontal: false, vertical: true)
                         .shadow(color: Color.black.opacity(0.2), radius: 12, x: 0, y: 4)
 
                     Text(snapshot.payload.subtitle)
                         .font(.headline)
                         .foregroundStyle(.white.opacity(0.88))
                         .multilineTextAlignment(.center)
+                        .lineLimit(3)
+                        .fixedSize(horizontal: false, vertical: true)
 
                     Text(snapshot.itemName)
                         .font(.subheadline.weight(.semibold))
@@ -332,18 +346,16 @@ struct DecisionCelebrationFullScreen: View {
                 .opacity(showMetric ? 1 : 0)
                 .offset(y: showMetric ? 0 : 16)
 
-                CelebrationRoastCard(title: "毒舌点评", line: roastLine)
+                CelebrationRoastCard(title: "毒舌点评", line: snapshot.payload.roastLine)
                     .opacity(showMetric ? 1 : 0)
                     .offset(y: showMetric ? 0 : 20)
 
                 if showButton {
                     VStack(spacing: 10) {
-                        ShareLink(
-                            item: shareText,
-                            subject: Text("我的买了么决策战报"),
-                            message: Text("来挑战你的冲动消费阈值。")
-                        ) {
-                            Label("分享战报去裂变", systemImage: "square.and.arrow.up.fill")
+                        Button {
+                            generatePoster()
+                        } label: {
+                            Label("生成专属海报", systemImage: "sparkles")
                                 .font(.headline.weight(.bold))
                                 .foregroundStyle(.white)
                                 .frame(maxWidth: .infinity)
@@ -360,7 +372,8 @@ struct DecisionCelebrationFullScreen: View {
 
                         Button {
                             HapticFeedback.buttonTap()
-                            completeOnce()
+                            let action: DecisionCelebrationContinueAction = snapshot.payload.tone == .saved ? .close : .goToExtractorCheckin
+                            completeOnce(action: action)
                         } label: {
                             Text(snapshot.payload.actionTitle)
                                 .font(.title3.weight(.bold))
@@ -381,6 +394,44 @@ struct DecisionCelebrationFullScreen: View {
         .ignoresSafeArea()
         .onAppear {
             startSequence()
+        }
+        .overlay {
+            if let snapshot = posterSnapshot {
+                CelebrationPosterPreviewScreen(snapshot: snapshot) {
+                    withAnimation(.spring(response: 0.38, dampingFraction: 0.84)) {
+                        posterSnapshot = nil
+                    }
+                }
+                .transition(.move(edge: .bottom).combined(with: .opacity))
+                .zIndex(10)
+            }
+        }
+    }
+
+    @MainActor
+    private func generatePoster() {
+        guard let image = renderPosterImage(
+            accent: accent,
+            badge: snapshot.payload.badge,
+            title: snapshot.payload.title,
+            itemName: snapshot.itemName,
+            imageData: snapshot.imageData,
+            roastLine: snapshot.payload.roastLine,
+            metric1Title: snapshot.payload.metricTitle,
+            metric1Value: snapshot.payload.metricValue,
+            metric2Title: nil,
+            metric2Value: nil
+        ) else {
+            return
+        }
+
+        withAnimation(.spring(response: 0.38, dampingFraction: 0.84)) {
+            self.posterSnapshot = CelebrationPosterSnapshot(
+                image: image,
+                shareText: shareText,
+                accent: accent,
+                title: "冷静决策海报"
+            )
         }
     }
 
@@ -417,10 +468,10 @@ struct DecisionCelebrationFullScreen: View {
     }
 
     /// 保障只触发一次关闭回调，避免重复点击导致状态错乱。
-    private func completeOnce() {
+    private func completeOnce(action: DecisionCelebrationContinueAction) {
         guard !didComplete else { return }
         didComplete = true
-        onComplete()
+        onComplete(action)
     }
 }
 
@@ -502,7 +553,6 @@ private struct CelebrationPerspectiveGrid: Shape {
 /// 庆祝页 3D 主卡：多层厚度 + 透视旋转，形成裸眼立体感。
 private struct CelebrationHero3DView: View {
     let accent: Color
-    let iconSystemName: String
     let imageData: Data?
     let isVisible: Bool
     let isBreathing: Bool
@@ -520,23 +570,14 @@ private struct CelebrationHero3DView: View {
                 .frame(height: 240)
                 .offset(y: 10)
 
-            VStack(spacing: 14) {
+            VStack {
                 ItemThumbnailView(
                     imageData: imageData,
-                    size: 86,
-                    cornerRadius: 20,
+                    size: 96,
+                    cornerRadius: 24,
                     placeholderSystemName: "shippingbox.fill"
                 )
                 .shadow(color: Color.black.opacity(0.24), radius: 12, x: 0, y: 8)
-
-                Image(systemName: iconSystemName)
-                    .font(.system(size: 36, weight: .black))
-                    .foregroundStyle(accent)
-
-                Text("MISSION CLEAR")
-                    .font(.caption2.weight(.heavy))
-                    .foregroundStyle(AppTheme.Palette.secondaryText)
-                    .tracking(1.2)
             }
             .padding(.vertical, 18)
             .frame(maxWidth: .infinity)
@@ -632,6 +673,318 @@ private struct CelebrationRoastCard: View {
         .overlay(
             RoundedRectangle(cornerRadius: 16, style: .continuous)
                 .stroke(Color.white.opacity(0.18), lineWidth: 1)
+        )
+    }
+}
+
+/// 海报预览快照：承载静态图片与分享文本，供预览页展示和系统分享。
+private struct CelebrationPosterSnapshot: Identifiable {
+    let id = UUID()
+    let image: UIImage
+    let shareText: String
+    let accent: Color
+    let title: String
+}
+
+/// 海报预览全屏页：先让用户确认海报，再显式触发系统分享。
+private struct CelebrationPosterPreviewScreen: View {
+    let snapshot: CelebrationPosterSnapshot
+    let onClose: () -> Void
+
+    @State private var showShareSheet = false
+    @State private var isCardVisible = false
+    @State private var horizontalDragOffset: CGFloat = 0
+    
+    /// 顶部安全区：使用系统窗口数据，避免被上层 ignoresSafeArea 影响。
+    private var topSafeAreaInset: CGFloat {
+        UIApplication.shared.connectedScenes
+            .compactMap { $0 as? UIWindowScene }
+            .flatMap(\.windows)
+            .first(where: \.isKeyWindow)?
+            .safeAreaInsets.top ?? 0
+    }
+
+    var body: some View {
+        ZStack {
+            CelebrationBackdrop(accent: snapshot.accent)
+
+            VStack(spacing: 16) {
+                HStack {
+                    Button {
+                        HapticFeedback.buttonTap()
+                        onClose()
+                    } label: {
+                        Label("返回", systemImage: "chevron.left")
+                            .font(.headline.weight(.semibold))
+                            .foregroundStyle(.white)
+                    }
+                    Spacer()
+                }
+
+                Text(snapshot.title)
+                    .font(.system(size: 28, weight: .black, design: .rounded))
+                    .foregroundStyle(.white)
+                    .shadow(color: Color.black.opacity(0.25), radius: 10, x: 0, y: 4)
+
+                Image(uiImage: snapshot.image)
+                    .resizable()
+                    .scaledToFit()
+                    .frame(maxWidth: 420)
+                    .clipShape(RoundedRectangle(cornerRadius: 26, style: .continuous))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 26, style: .continuous)
+                            .stroke(Color.white.opacity(0.72), lineWidth: 1.2)
+                    )
+                    .shadow(color: Color.black.opacity(0.28), radius: 24, x: 0, y: 12)
+                    .scaleEffect(isCardVisible ? 1 : 0.92)
+                    .opacity(isCardVisible ? 1 : 0)
+
+                Text("长按海报可保存图片，再点分享发到你的社交平台。")
+                    .font(.footnote.weight(.semibold))
+                    .foregroundStyle(Color.white.opacity(0.84))
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, 12)
+
+                Button {
+                    HapticFeedback.buttonTap()
+                    showShareSheet = true
+                } label: {
+                    Label("分享海报", systemImage: "square.and.arrow.up")
+                        .font(.title3.weight(.bold))
+                        .frame(maxWidth: .infinity)
+                }
+                .buttonStyle(DuolingoButtonStyle(tint: snapshot.accent))
+                
+                Button {
+                    HapticFeedback.buttonTap()
+                    onClose()
+                } label: {
+                    Text("关闭预览")
+                        .font(.headline.weight(.semibold))
+                        .foregroundStyle(Color.white.opacity(0.88))
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 10)
+                }
+                .buttonStyle(.plain)
+
+                Spacer(minLength: 10)
+            }
+            .padding(.horizontal, 20)
+            .padding(.top, max(topSafeAreaInset + 8, 24))
+            .padding(.bottom, 28)
+            .offset(x: horizontalDragOffset)
+        }
+        .contentShape(Rectangle())
+        .simultaneousGesture(
+            DragGesture(minimumDistance: 12)
+                .onChanged { value in
+                    guard abs(value.translation.width) > abs(value.translation.height) else { return }
+                    horizontalDragOffset = max(0, value.translation.width)
+                }
+                .onEnded { value in
+                    let shouldClose =
+                        value.translation.width > 110 ||
+                        value.predictedEndTranslation.width > 180
+                    if shouldClose {
+                        HapticFeedback.buttonTap()
+                        onClose()
+                    } else {
+                        withAnimation(.spring(response: 0.32, dampingFraction: 0.82)) {
+                            horizontalDragOffset = 0
+                        }
+                    }
+                }
+        )
+        .onAppear {
+            withAnimation(.spring(response: 0.5, dampingFraction: 0.78)) {
+                isCardVisible = true
+            }
+        }
+        .sheet(isPresented: $showShareSheet) {
+            ShareSheet(items: [snapshot.image, snapshot.shareText])
+        }
+    }
+}
+
+/// 原生分享表单
+private struct ShareSheet: UIViewControllerRepresentable {
+    let items: [Any]
+
+    func makeUIViewController(context: Context) -> UIActivityViewController {
+        UIActivityViewController(activityItems: items, applicationActivities: nil)
+    }
+
+    func updateUIViewController(_ uiViewController: UIActivityViewController, context: Context) {}
+}
+
+/// 统一海报渲染入口：返回可用于预览和分享的静态图片。
+@MainActor
+private func renderPosterImage(
+    accent: Color,
+    badge: String,
+    title: String,
+    itemName: String,
+    imageData: Data?,
+    roastLine: String,
+    metric1Title: String,
+    metric1Value: String,
+    metric2Title: String?,
+    metric2Value: String?
+) -> UIImage? {
+    let posterView = PosterTemplateView(
+        accent: accent,
+        badge: badge,
+        title: title,
+        itemName: itemName,
+        imageData: imageData,
+        roastLine: roastLine,
+        metric1Title: metric1Title,
+        metric1Value: metric1Value,
+        metric2Title: metric2Title,
+        metric2Value: metric2Value
+    )
+
+    let renderer = ImageRenderer(content: posterView)
+    renderer.scale = 3.0
+    return renderer.uiImage
+}
+
+/// 战报海报生成模板：更具设计感，包含物品图片和多邻国风粗犷卡片。
+private struct PosterTemplateView: View {
+    let accent: Color
+    let badge: String
+    let title: String
+    let itemName: String
+    let imageData: Data?
+    let roastLine: String
+    
+    let metric1Title: String
+    let metric1Value: String
+    
+    let metric2Title: String?
+    let metric2Value: String?
+    
+    var body: some View {
+        VStack(spacing: 0) {
+            // 背景板：渐变色
+            ZStack {
+                LinearGradient(
+                    colors: [
+                        accent.opacity(0.8),
+                        accent.opacity(0.4)
+                    ],
+                    startPoint: .topLeading,
+                    endPoint: .bottomTrailing
+                )
+                
+                // 内部的白色实体粗边卡片
+                VStack(spacing: 24) {
+                    
+                    // 1. 头衔标志
+                    Text(badge)
+                        .font(.headline.weight(.heavy))
+                        .foregroundStyle(accent)
+                        .padding(.horizontal, 16)
+                        .padding(.vertical, 8)
+                        .background(
+                            Capsule().fill(accent.opacity(0.15))
+                        )
+                        .padding(.top, 16)
+
+                    // 2. 核心大标题与物品主图
+                    VStack(spacing: 16) {
+                        Text(title)
+                            .font(.system(size: 42, weight: .black, design: .rounded))
+                            .foregroundStyle(AppTheme.Palette.primaryText)
+                            .multilineTextAlignment(.center)
+                        
+                        ItemThumbnailView(
+                            imageData: imageData,
+                            size: 140,
+                            cornerRadius: 32,
+                            placeholderSystemName: "shippingbox.fill"
+                        )
+                        .shadow(color: Color.black.opacity(0.08), radius: 10, x: 0, y: 5)
+                        
+                        Text(itemName)
+                            .font(.title2.weight(.bold))
+                            .foregroundStyle(AppTheme.Palette.secondaryText)
+                            .lineLimit(2)
+                            .multilineTextAlignment(.center)
+                            .padding(.horizontal, 20)
+                    }
+                    
+                    // 3. 极度突出的数据指标
+                    HStack(spacing: 16) {
+                        posterMetric(title: metric1Title, value: metric1Value)
+                        if let t2 = metric2Title, let v2 = metric2Value {
+                            posterMetric(title: t2, value: v2)
+                        }
+                    }
+                    .padding(.horizontal, 24)
+                    
+                    // 4. 毒舌点评区块
+                    VStack(alignment: .leading, spacing: 6) {
+                        Text("审判官点评")
+                            .font(.caption.weight(.bold))
+                            .foregroundStyle(AppTheme.Palette.tertiaryText)
+                        Text("“\(roastLine)”")
+                            .font(.headline.weight(.semibold))
+                            .foregroundStyle(AppTheme.Palette.primaryText)
+                            .lineSpacing(4)
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(20)
+                    .background(
+                        RoundedRectangle(cornerRadius: 16, style: .continuous)
+                            .fill(AppTheme.Palette.canvas)
+                    )
+                    .padding(.horizontal, 24)
+                    
+                    Spacer(minLength: 16)
+                    
+                    // 5. 底部品牌 Logo
+                    HStack(spacing: 6) {
+                        Image(systemName: "bolt.heart.fill")
+                            .font(.title3)
+                            .foregroundStyle(accent)
+                        Text("买 了 么 APP")
+                            .font(.system(size: 16, weight: .heavy, design: .rounded))
+                            .foregroundStyle(AppTheme.Palette.secondaryText)
+                    }
+                    .padding(.bottom, 24)
+                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .background(Color.white)
+                .clipShape(RoundedRectangle(cornerRadius: 32, style: .continuous))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 32, style: .continuous)
+                        .stroke(AppTheme.Palette.cardStroke, lineWidth: 2)
+                )
+                .padding(24) // 卡片距离边缘的留白
+            }
+        }
+        .frame(width: 440, height: 720) // 给定一个固定的黄金比例尺寸
+        .background(Color.white) // 保证整体是最底层有填充的
+    }
+    
+    private func posterMetric(title: String, value: String) -> some View {
+        VStack(spacing: 8) {
+            Text(title)
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(AppTheme.Palette.tertiaryText)
+            Text(value)
+                .font(.system(size: 32, weight: .heavy, design: .rounded))
+                .foregroundStyle(accent)
+                .lineLimit(1)
+                .minimumScaleFactor(0.6)
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, 16)
+        .background(
+            RoundedRectangle(cornerRadius: 20, style: .continuous)
+                .fill(AppTheme.Palette.canvas)
+                .shadow(color: Color.black.opacity(0.04), radius: 5, x: 0, y: 3)
         )
     }
 }

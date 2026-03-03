@@ -48,6 +48,8 @@ final class NotificationManager: NSObject {
 
         // 已进入购买状态后，不应再保留冷静期决策提醒。
         cancelCooldownDecisionReminders(for: item.id)
+        // 发生新使用行为后，用户通常已处理该条目，清掉手动“处置追提醒”。
+        cancelRescueReminder(for: item.id)
 
         guard let baseDate = item.lastUsedAt ?? item.purchaseAt else {
             cancelIdleReminders(for: item.id)
@@ -121,10 +123,52 @@ final class NotificationManager: NSObject {
         )
     }
 
+    /// 清理指定物品的“吃灰处置追提醒”。
+    func cancelRescueReminder(for itemID: UUID) {
+        center.removePendingNotificationRequests(
+            withIdentifiers: [notificationIdentifier(for: itemID, type: .rescueFollowup)]
+        )
+    }
+
     /// 清理指定物品的全部提醒。
     func cancelAllReminders(for itemID: UUID) {
         cancelIdleReminders(for: itemID)
         cancelCooldownDecisionReminders(for: itemID)
+        cancelRescueReminder(for: itemID)
+    }
+
+    /// 安排“7天后再提醒我处置”通知：用于吃灰挽救页面的一键追提醒。
+    func scheduleRescueReminder(for item: Item, days: Int = 7) async {
+        guard item.status == .purchased else {
+            cancelRescueReminder(for: item.id)
+            return
+        }
+        guard days > 0 else { return }
+
+        cancelRescueReminder(for: item.id)
+        guard let triggerDate = calendar.date(byAdding: .day, value: days, to: Date.now) else {
+            return
+        }
+
+        let projectedIdleDays: Int = {
+            guard let baseDate = item.lastUsedAt ?? item.purchaseAt else {
+                return max(days, 1)
+            }
+            let baseStart = calendar.startOfDay(for: baseDate)
+            let triggerStart = calendar.startOfDay(for: triggerDate)
+            let raw = calendar.dateComponents([.day], from: baseStart, to: triggerStart).day ?? days
+            return max(raw, 1)
+        }()
+
+        await scheduleDateReminder(
+            identifier: notificationIdentifier(for: item.id, type: .rescueFollowup),
+            title: AppConstants.Notification.title,
+            body: AppConstants.RoastCopy.idleRescueFollowup(
+                itemName: item.displayName,
+                idleDays: projectedIdleDays
+            ),
+            triggerDate: triggerDate
+        )
     }
 
     /// 安排单条吃灰提醒。
@@ -238,6 +282,7 @@ private enum ReminderType: String {
     case strong
     case cooldownReady
     case cooldownFollowup
+    case rescueFollowup
 }
 
 extension NotificationManager: UNUserNotificationCenterDelegate {
