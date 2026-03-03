@@ -1,0 +1,52 @@
+# 买了么（MaiLeMe）开发 TODO
+
+最后更新：2026-03-03
+
+## 已完成
+
+- [x] 建立 V1.0 产品文档（PRD、技术架构、目录规范）
+- [x] 建立数据契约文档（金额口径、状态流转、统计口径）
+- [x] 创建项目目录骨架（App、Models、ViewModels、Views、Services、Utils、Resources、Docs）
+- [x] 清理 `.gitkeep` 资源冲突问题，恢复 Xcode 正常构建
+- [x] 落地 SwiftData 数据层：`Item`、`UsageRecord`
+- [x] 接入 `ModelContainer`，`Schema` 包含全部模型
+- [x] `DarkRoomViewModel`（冷静期创建、决策流转）
+- [x] `ExtractorViewModel`（打卡、吃灰排行、回本进度、省钱统计）
+- [x] 新增条目支持本地图片上传（相册选择 + 压缩入库）
+- [x] 小黑屋/榨干机/看板明细接入统一缩略图展示组件
+- [x] 详情页图片支持点击大图预览与长按更换
+- [x] 榨干机“已购物品”状态改为动态标签（刚买未用/吃灰分级/持续使用）
+- [x] 打卡成功新增仪式感弹层动画与震动反馈（场景化毒舌激励文案）
+- [x] 榨干机删除入口改为确认弹窗（替代 confirmationDialog）
+- [x] 冷静期终局决策（忍住没买/还是买了）接入统一仪式弹层与震动反馈
+
+## 进行中
+
+- [ ] 补齐核心单元测试（冷静期、单次成本、Top3 吃灰）【暂缓】
+
+## 下一步（按优先级）
+
+- [x] 新建 `Views/Screens/DarkRoomScreen.swift`，接入 `DarkRoomViewModel`
+- [x] 新建 `Views/Screens/ExtractorScreen.swift`，接入 `ExtractorViewModel`
+- [x] 新建 `Views/Screens/AddItemScreen.swift`，统一新增入口
+- [x] 新建 `Views/Components/ProgressBarView.swift`，落地回本进度展示
+- [x] 新建 `Utils/Constants.swift`，沉淀毒舌文案与基础常量
+- [x] 新建 `Services/NotificationManager.swift`，实现本地通知调度
+- [x] 新建 `Mocks/` 调试目录（Mock 数据注入 + 通知调试场景）
+- [x] 完成 V1 视觉系统升级（主题色、背景动效、卡片风格、统一页面层次）
+- [x] 小黑屋 / 榨干机 / 明细页支持点击钻取后的统一视觉改造
+- [x] 支持“冷静期内提前购买”流转并沉淀 `purchasedDuringCooldown`
+- [x] 小黑屋接入“冷静期结束 + 24 小时追提醒”毒舌通知
+- [x] 购买补充弹层支持“预期使用次数 + 自动估算目标单次成本（可手动覆盖）”
+- [x] 榨干机详情支持“详细打卡”（使用时间、使用时长、备注）
+- [x] 看板明细页（省钱明细、吃灰排行）统一中文日期展示
+- [x] Mock 数据补齐使用时长、预期使用次数与冲动购买场景
+- [ ] 新建单元测试（冷静期判断、单次成本、Top3 吃灰排序）
+- [ ] 图片编辑增强（裁剪、替换来源、清晰度提示）
+
+## 验收检查点
+
+- [x] 小黑屋：可新增待购并显示剩余冷静天数
+- [x] 小黑屋：到期后可执行“忍住没买 / 破戒购买”
+- [x] 榨干机：可打卡并实时更新单次成本
+- [x] 看板：可展示省钱总额与吃灰 Top3
