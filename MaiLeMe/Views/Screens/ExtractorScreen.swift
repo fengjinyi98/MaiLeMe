@@ -543,7 +543,7 @@ struct ExtractorScreen: View {
                     .padding(.vertical, 4)
                     .background(
                         Capsule()
-                            .fill(Color.white.opacity(0.52))
+                            .fill(AppTheme.Palette.softSurface)
                     )
             }
             Text(subtitle)

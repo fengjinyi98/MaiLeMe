@@ -189,7 +189,7 @@ struct AddItemScreen: View {
             .padding(.vertical, 10)
             .background(
                 RoundedRectangle(cornerRadius: 12, style: .continuous)
-                    .fill(Color.white.opacity(0.96))
+                    .fill(AppTheme.Palette.inputFill)
             )
             .overlay(
                 RoundedRectangle(cornerRadius: 12, style: .continuous)

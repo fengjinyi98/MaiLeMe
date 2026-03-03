@@ -462,7 +462,7 @@ struct DarkRoomScreen: View {
                                             .fill(
                                                 selectedPriceFilter == filter
                                                     ? AppTheme.Palette.cooling.opacity(0.24)
-                                                    : Color.white.opacity(0.56)
+                                                    : AppTheme.Palette.softSurface
                                             )
                                     )
                                     .overlay(
@@ -770,7 +770,7 @@ struct DarkRoomScreen: View {
                     .padding(.vertical, 4)
                     .background(
                         Capsule()
-                            .fill(Color.white.opacity(0.52))
+                            .fill(AppTheme.Palette.softSurface)
                     )
             }
             Text(subtitle)

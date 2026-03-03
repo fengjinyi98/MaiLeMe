@@ -407,7 +407,7 @@ struct SavedDecisionDetailScreen: View {
         .padding(12)
         .background(
             RoundedRectangle(cornerRadius: 12, style: .continuous)
-                .fill(Color.white.opacity(0.62))
+                .fill(AppTheme.Palette.softSurface)
         )
     }
 
@@ -425,7 +425,7 @@ struct SavedDecisionDetailScreen: View {
         .padding(.vertical, 10)
         .background(
             RoundedRectangle(cornerRadius: 12, style: .continuous)
-                .fill(Color.white.opacity(0.92))
+                .fill(AppTheme.Palette.inputFill)
         )
         .overlay(
             RoundedRectangle(cornerRadius: 12, style: .continuous)

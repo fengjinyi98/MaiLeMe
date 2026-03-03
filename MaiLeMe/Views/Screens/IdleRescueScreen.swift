@@ -246,7 +246,7 @@ struct IdleRescueScreen: View {
         .padding(12)
         .background(
             RoundedRectangle(cornerRadius: 12, style: .continuous)
-                .fill(Color.white.opacity(0.62))
+                .fill(AppTheme.Palette.softSurface)
         )
     }
 
@@ -277,7 +277,7 @@ struct IdleRescueScreen: View {
         .padding(.vertical, 10)
         .background(
             RoundedRectangle(cornerRadius: 12, style: .continuous)
-                .fill(Color.white.opacity(0.92))
+                .fill(AppTheme.Palette.inputFill)
         )
         .overlay(
             RoundedRectangle(cornerRadius: 12, style: .continuous)

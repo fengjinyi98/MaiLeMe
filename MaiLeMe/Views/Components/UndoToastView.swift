@@ -45,8 +45,8 @@ struct UndoToastView: View {
                 .fill(
                     LinearGradient(
                         colors: [
-                            Color.white.opacity(0.95),
-                            Color.white.opacity(0.88)
+                            AppTheme.Palette.inputFill,
+                            AppTheme.Palette.cardFill
                         ],
                         startPoint: .topLeading,
                         endPoint: .bottomTrailing

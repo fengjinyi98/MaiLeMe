@@ -955,7 +955,7 @@ private struct PosterTemplateView: View {
                     .padding(.bottom, 24)
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
-                .background(Color.white)
+                .background(AppTheme.Palette.cardFill)
                 .clipShape(RoundedRectangle(cornerRadius: 32, style: .continuous))
                 .overlay(
                     RoundedRectangle(cornerRadius: 32, style: .continuous)
@@ -965,7 +965,7 @@ private struct PosterTemplateView: View {
             }
         }
         .frame(width: 440, height: 720) // 给定一个固定的黄金比例尺寸
-        .background(Color.white) // 保证整体是最底层有填充的
+        .background(AppTheme.Palette.cardFill) // 保证整体是最底层有填充的
     }
     
     private func posterMetric(title: String, value: String) -> some View {
