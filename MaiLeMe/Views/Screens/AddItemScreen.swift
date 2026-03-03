@@ -111,7 +111,7 @@ struct AddItemScreen: View {
                     .foregroundStyle(isFormValid ? AppTheme.Palette.accent : AppTheme.Palette.tertiaryText)
                 }
             }
-            .onChange(of: selectedPhotoItem) { _, item in
+            .onChange(of: selectedPhotoItem, initial: false) { _, item in
                 Task {
                     await loadSelectedPhoto(from: item)
                 }

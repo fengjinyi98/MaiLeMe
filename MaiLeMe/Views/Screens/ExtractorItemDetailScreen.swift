@@ -20,12 +20,11 @@ struct ExtractorItemDetailScreen: View {
     @State private var isPresentingDeleteConfirm = false
     @State private var isPresentingAdvancedCheckin = false
     @State private var errorMessage: String?
-    @State private var celebrationPayload: CheckinCelebrationPayload?
+    @State private var celebrationSnapshot: CheckinCelebrationSnapshot?
     @State private var hasAppeared = false
     @State private var advancedUsedAt: Date = .now
     @State private var advancedDurationText: String = ""
     @State private var advancedNote: String = ""
-    @State private var celebrationDismissTask: Task<Void, Never>?
 
     private var usageRecords: [UsageRecord] {
         item.usageRecords.sorted(by: { $0.usedAt > $1.usedAt })
@@ -52,16 +51,6 @@ struct ExtractorItemDetailScreen: View {
                 .padding(.vertical, 18)
             }
 
-            if let celebrationPayload {
-                CheckinCelebrationOverlay(
-                    payload: celebrationPayload,
-                    usageCount: item.usageCount,
-                    currentCostText: viewModel.currentCostPerUseCents(for: item).map { "¥\(centsToYuan($0))" } ?? "未使用",
-                    onDismiss: dismissCelebration
-                )
-                .transition(.scale(scale: 0.92).combined(with: .opacity))
-                .zIndex(1)
-            }
         }
         .navigationTitle(item.displayName)
         .navigationBarTitleDisplayMode(.inline)
@@ -95,9 +84,11 @@ struct ExtractorItemDetailScreen: View {
         .onAppear {
             hasAppeared = true
         }
-        .animation(AppTheme.Motion.cardSpring, value: celebrationPayload != nil)
-        .onDisappear {
-            celebrationDismissTask?.cancel()
+        .fullScreenCover(item: $celebrationSnapshot) { snapshot in
+            CheckinCelebrationFullScreen(snapshot: snapshot) {
+                dismissCelebration()
+            }
+            .interactiveDismissDisabled(true)
         }
     }
 
@@ -469,24 +460,19 @@ struct ExtractorItemDetailScreen: View {
             )
     }
 
-    /// 展示打卡成功仪式弹层，并安排自动消失。
+    /// 展示打卡成功仪式页（全屏版）。
     private func presentCelebration(_ payload: CheckinCelebrationPayload) {
-        celebrationDismissTask?.cancel()
-        HapticFeedback.checkinSuccess(isBigMoment: payload.isBigMoment)
-        celebrationPayload = payload
-
-        celebrationDismissTask = Task {
-            try? await Task.sleep(nanoseconds: 2_600_000_000)
-            await MainActor.run {
-                dismissCelebration()
-            }
-        }
+        celebrationSnapshot = CheckinCelebrationSnapshot(
+            payload: payload,
+            itemName: item.displayName,
+            usageCount: item.usageCount,
+            currentCostText: viewModel.currentCostPerUseCents(for: item).map { "¥\(centsToYuan($0))" } ?? "未使用",
+            imageData: item.coverImageData
+        )
     }
 
-    /// 关闭仪式弹层并取消自动任务。
+    /// 关闭打卡成功仪式页。
     private func dismissCelebration() {
-        celebrationDismissTask?.cancel()
-        celebrationDismissTask = nil
-        celebrationPayload = nil
+        celebrationSnapshot = nil
     }
 }

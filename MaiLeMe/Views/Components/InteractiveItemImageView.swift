@@ -47,7 +47,7 @@ struct InteractiveItemImageView: View {
                 selection: $selectedPhotoItem,
                 matching: .images
             )
-            .onChange(of: selectedPhotoItem) { _, item in
+            .onChange(of: selectedPhotoItem, initial: false) { _, item in
                 Task {
                     await replaceImage(from: item)
                 }

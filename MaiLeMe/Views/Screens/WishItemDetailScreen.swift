@@ -18,8 +18,7 @@ struct WishItemDetailScreen: View {
     @State private var isPresentingPurchaseSheet = false
     @State private var isPresentingDeleteConfirm = false
     @State private var errorMessage: String?
-    @State private var decisionCelebration: DarkRoomDecisionCelebrationPayload?
-    @State private var celebrationDismissTask: Task<Void, Never>?
+    @State private var decisionCelebration: DecisionCelebrationSnapshot?
     @State private var hasAppeared = false
     @State private var purchasePath: PurchasePath = .normalDecision
 
@@ -61,14 +60,6 @@ struct WishItemDetailScreen: View {
                 .padding(.vertical, 18)
             }
 
-            if let decisionCelebration {
-                DecisionCelebrationOverlay(
-                    payload: decisionCelebration,
-                    onDismiss: completeDecisionFlow
-                )
-                .transition(.scale(scale: 0.92).combined(with: .opacity))
-                .zIndex(1)
-            }
         }
         .navigationTitle("小黑屋详情")
         .navigationBarTitleDisplayMode(.inline)
@@ -111,9 +102,11 @@ struct WishItemDetailScreen: View {
         .onAppear {
             hasAppeared = true
         }
-        .animation(AppTheme.Motion.cardSpring, value: decisionCelebration != nil)
-        .onDisappear {
-            celebrationDismissTask?.cancel()
+        .fullScreenCover(item: $decisionCelebration) { snapshot in
+            DecisionCelebrationFullScreen(snapshot: snapshot) {
+                completeDecisionFlow()
+            }
+            .interactiveDismissDisabled(true)
         }
     }
 
@@ -352,24 +345,17 @@ struct WishItemDetailScreen: View {
         String(format: "%.2f", Double(cents) / 100.0)
     }
 
-    /// 展示决策仪式弹层，并在短暂停留后自动完成返回。
+    /// 展示决策仪式页（全屏版）。
     private func presentDecisionCelebration(_ payload: DarkRoomDecisionCelebrationPayload) {
-        celebrationDismissTask?.cancel()
-        HapticFeedback.decisionCompleted(isSaved: payload.tone == .saved)
-        decisionCelebration = payload
-
-        celebrationDismissTask = Task {
-            try? await Task.sleep(nanoseconds: 2_600_000_000)
-            await MainActor.run {
-                completeDecisionFlow()
-            }
-        }
+        decisionCelebration = DecisionCelebrationSnapshot(
+            payload: payload,
+            itemName: item.displayName,
+            imageData: item.coverImageData
+        )
     }
 
-    /// 结束决策流程：关闭弹层并返回上一页。
+    /// 结束决策流程：关闭庆祝页并返回上一页。
     private func completeDecisionFlow() {
-        celebrationDismissTask?.cancel()
-        celebrationDismissTask = nil
         decisionCelebration = nil
         dismiss()
     }
