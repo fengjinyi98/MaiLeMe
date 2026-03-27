@@ -33,4 +33,27 @@ final class CopyMemoryStoreTests: XCTestCase {
 
         XCTAssertTrue(store.recentCopyIDs(module: .decision).contains("decision_saved_title_001"))
     }
+
+    /// 历史记录应只保留最近 50 条，避免偏好体积膨胀并保证“最近出现过”语义稳定。
+    func test_memory_store_trims_history_to_latest_fifty_entries() {
+        let store = CopyMemoryStore(defaults: UserDefaults(suiteName: suiteName)!)
+
+        for index in 0..<60 {
+            store.record(
+                copyID: "decision_saved_title_\(index)",
+                module: .decision,
+                scene: "decision_saved",
+                slot: .title,
+                itemID: nil,
+                tone: .neutral,
+                intensity: .medium
+            )
+        }
+
+        let recentIDs = store.recentCopyIDs(module: .decision)
+        XCTAssertEqual(recentIDs.count, 50)
+        XCTAssertEqual(recentIDs.first, "decision_saved_title_59")
+        XCTAssertEqual(recentIDs.last, "decision_saved_title_10")
+        XCTAssertFalse(recentIDs.contains("decision_saved_title_9"))
+    }
 }

@@ -12,6 +12,8 @@ struct CopyScenarioInterpreter {
     func checkinScene(idleDays: Int, usageCount: Int, isFirstUse: Bool) -> String {
         if isFirstUse && idleDays == 0 { return "first_use_immediate" }
         if isFirstUse && idleDays >= 30 { return "first_use_late" }
+        // 首次使用但尚未拖到一个月时，需要与现有资源中的 `first_use_normal` 场景对齐。
+        if isFirstUse && (1...29).contains(idleDays) { return "first_use_normal" }
         if idleDays >= 30 { return "revival_heavy" }
         if idleDays >= 7 { return "revival_mid" }
         if usageCount >= 10 { return "steady_high_usage" }

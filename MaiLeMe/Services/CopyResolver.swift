@@ -15,6 +15,16 @@ enum CopyResolutionError: LocalizedError, Equatable {
 
 /// 文案解析器：根据上下文从文案库中打分选出最佳候选，并在返回前完成模板渲染与记忆写入。
 final class CopyResolver {
+    /// 候选分层：保证 scene 选择先看精确命中，再看 default/fallback，最后才看其他泛化候选。
+    private enum CandidateTier {
+        /// 与上下文 scene 完全一致的候选。
+        case exactScene
+        /// 显式 default / fallback 候选。
+        case fallbackOrDefault
+        /// 其他未精确命中的泛化候选。
+        case generalized
+    }
+
     /// 已加载的文案库。
     private let library: CopyLibrary
     /// 文案记忆层，用于反重复打分。
@@ -34,7 +44,7 @@ final class CopyResolver {
     /// - Returns: `ResolvedCopy`，已完成候选筛选、模板渲染和兜底标记的最终文案。
     /// - Throws: `CopyResolutionError.noCandidates`，当没有任何可用候选时抛出。
     func resolveSingle(_ context: CopyContext) throws -> ResolvedCopy {
-        let candidates = library.entries.filter { entry in
+        let filteredCandidates = library.entries.filter { entry in
             entry.module == context.module
                 && entry.slot == context.slot
                 && isAllowedByIntensity(entry, context: context)
@@ -42,9 +52,14 @@ final class CopyResolver {
                 && isAllowedByExclusionRules(entry, context: context)
         }
 
-        guard !candidates.isEmpty else {
+        guard !filteredCandidates.isEmpty else {
             throw CopyResolutionError.noCandidates
         }
+
+        let candidates = candidatesForBestTier(
+            from: filteredCandidates,
+            context: context
+        )
 
         let recentCopyIDs = Set(memoryStore.recentCopyIDs(module: context.module))
         let bestEntry = candidates
@@ -102,15 +117,6 @@ final class CopyResolver {
     ) -> Int {
         var total = entry.weight
 
-        // 场景是第一优先级：精确命中应显著领先；fallback 可在无精确场景时兜底；无关场景则明显降权。
-        if entry.scene.contains(context.scene) {
-            total += 1_000
-        } else if isFallbackEntry(entry) {
-            total += 150
-        } else {
-            total -= 250
-        }
-
         // 一级品类与行为标签采用“软约束加分”策略：命中越多越优先，但不命中也允许退回泛化候选。
         if !entry.categoryInclude.isEmpty {
             total += entry.categoryInclude.contains(context.primaryCategory) ? 180 : -90
@@ -142,6 +148,34 @@ final class CopyResolver {
         }
 
         return total
+    }
+
+    /// 从已通过硬过滤的候选中选出最高优先级的一层。
+    /// - Parameters:
+    ///   - candidates: `[RoastCopyEntry]`，已通过模块、槽位、强度等硬过滤的候选。
+    ///   - context: `CopyContext`，当前解析上下文。
+    /// - Returns: `[RoastCopyEntry]`，属于最高优先层的候选集合。
+    private func candidatesForBestTier(
+        from candidates: [RoastCopyEntry],
+        context: CopyContext
+    ) -> [RoastCopyEntry] {
+        let exactSceneCandidates = candidates.filter { entry in
+            entry.scene.contains(context.scene)
+        }
+        if !exactSceneCandidates.isEmpty {
+            return exactSceneCandidates
+        }
+
+        let fallbackCandidates = candidates.filter { entry in
+            candidateTier(for: entry, context: context) == .fallbackOrDefault
+        }
+        if !fallbackCandidates.isEmpty {
+            return fallbackCandidates
+        }
+
+        return candidates.filter { entry in
+            candidateTier(for: entry, context: context) == .generalized
+        }
     }
 
     /// 判断文案是否满足强度上限要求。
@@ -176,6 +210,26 @@ final class CopyResolver {
         return !behaviorExclusionHit
     }
 
+    /// 判断单条候选在当前上下文下属于哪一层 scene 选择优先级。
+    /// - Parameters:
+    ///   - entry: `RoastCopyEntry`，待判断候选。
+    ///   - context: `CopyContext`，当前解析上下文。
+    /// - Returns: `CandidateTier`，用于 resolver 先分层后打分。
+    private func candidateTier(
+        for entry: RoastCopyEntry,
+        context: CopyContext
+    ) -> CandidateTier {
+        if entry.scene.contains(context.scene) {
+            return .exactScene
+        }
+
+        if isFallbackEntry(entry) {
+            return .fallbackOrDefault
+        }
+
+        return .generalized
+    }
+
     /// 计算强度与上限之间的贴合度得分。
     /// - Parameters:
     ///   - intensity: `CopyIntensity`，候选文案强度。
@@ -202,9 +256,19 @@ final class CopyResolver {
 
     /// 判断候选是否属于显式兜底文案。
     /// - Parameter entry: `RoastCopyEntry`，待判断候选。
-    /// - Returns: `Bool`，`true` 表示其任一 scene 标识包含 `fallback`。
+    /// - Returns: `Bool`，`true` 表示其任一 scene 标识属于 `default` / `*_default` / `fallback*`。
     private func isFallbackEntry(_ entry: RoastCopyEntry) -> Bool {
-        entry.scene.contains { $0.localizedCaseInsensitiveContains("fallback") }
+        entry.scene.contains { isFallbackSceneIdentifier($0) }
+    }
+
+    /// 判断单个 scene 标识是否属于显式兜底语义。
+    /// - Parameter sceneIdentifier: `String`，资源中的单个 scene 值。
+    /// - Returns: `Bool`，`true` 表示其属于 resolver 应优先兜底的 default/fallback 语义。
+    private func isFallbackSceneIdentifier(_ sceneIdentifier: String) -> Bool {
+        let normalizedIdentifier = sceneIdentifier.lowercased()
+        return normalizedIdentifier == "default"
+            || normalizedIdentifier.hasSuffix("_default")
+            || normalizedIdentifier.hasPrefix("fallback")
     }
 
     /// 渲染模板字符串中的占位符。
