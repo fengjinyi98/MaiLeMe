@@ -46,7 +46,10 @@ final class ItemCategoryClassifierTests: XCTestCase {
             wishPriceCents: 399999,
             primaryCategoryRawValue: ItemPrimaryCategory.office.rawValue,
             secondaryCategoryRawValue: ItemSecondaryCategory.desktopComputer.rawValue,
-            behaviorTagsRawValue: expectedBehaviorTagsRawValue
+            categorySourceRawValue: CopyCategorySource.userSelected.rawValue,
+            categoryConfidenceRawValue: CopyConfidence.high.rawValue,
+            behaviorTagsRawValue: expectedBehaviorTagsRawValue,
+            behaviorTagSourceRawValue: CopyTagSource.userAdjusted.rawValue
         )
 
         writeContext.insert(item)
@@ -72,12 +75,93 @@ final class ItemCategoryClassifierTests: XCTestCase {
             persistedItem.secondaryCategoryRawValue,
             ItemSecondaryCategory.desktopComputer.rawValue
         )
+        XCTAssertEqual(
+            persistedItem.categorySourceRawValue,
+            CopyCategorySource.userSelected.rawValue
+        )
+        XCTAssertEqual(
+            persistedItem.categoryConfidenceRawValue,
+            CopyConfidence.high.rawValue
+        )
         XCTAssertEqual(persistedItem.behaviorTagsRawValue, expectedBehaviorTagsRawValue)
+        XCTAssertEqual(
+            persistedItem.behaviorTagSourceRawValue,
+            CopyTagSource.userAdjusted.rawValue
+        )
         XCTAssertEqual(persistedItem.primaryCategory, .office)
         XCTAssertEqual(persistedItem.secondaryCategory, .desktopComputer)
+        XCTAssertEqual(persistedItem.categorySource, .userSelected)
+        XCTAssertEqual(persistedItem.categoryConfidence, .high)
         XCTAssertEqual(
             Set(persistedItem.behaviorTags),
             Set<ItemBehaviorTag>([.efficiencyFantasy, .selfImprovement])
         )
+        XCTAssertEqual(persistedItem.behaviorTagSource, .userAdjusted)
+    }
+
+    /// 未处理条目不应伪装成已经完成自动识别；同时历史脏值应回退到保守语义。
+    func test_item_defaults_to_unresolved_sources_and_falls_back_for_invalid_raw_values() {
+        let unresolvedItem = Item(
+            name: "待分类条目",
+            wishPriceCents: 1999
+        )
+
+        XCTAssertEqual(unresolvedItem.categorySource, .unresolved)
+        XCTAssertEqual(unresolvedItem.behaviorTagSource, .unresolved)
+        XCTAssertEqual(unresolvedItem.categoryConfidence, .low)
+
+        let invalidRawValueItem = Item(
+            name: "历史脏数据",
+            wishPriceCents: 2999,
+            primaryCategoryRawValue: "invalid-primary",
+            secondaryCategoryRawValue: "invalid-secondary",
+            categorySourceRawValue: "invalid-category-source",
+            categoryConfidenceRawValue: "invalid-confidence",
+            behaviorTagsRawValue: [
+                ItemBehaviorTag.efficiencyFantasy.rawValue,
+                "invalid-tag"
+            ],
+            behaviorTagSourceRawValue: "invalid-tag-source"
+        )
+
+        XCTAssertEqual(invalidRawValueItem.primaryCategory, .other)
+        XCTAssertEqual(invalidRawValueItem.secondaryCategory, .other)
+        XCTAssertEqual(invalidRawValueItem.categorySource, .unresolved)
+        XCTAssertEqual(invalidRawValueItem.categoryConfidence, .low)
+        XCTAssertEqual(
+            invalidRawValueItem.behaviorTags,
+            [.efficiencyFantasy]
+        )
+        XCTAssertEqual(invalidRawValueItem.behaviorTagSource, .unresolved)
+    }
+
+    /// 二级品类一旦明确，就应把一级品类收敛到 taxonomy 映射；只有 secondary 为 `.other` 时允许显式一级品类独立存在。
+    func test_item_keeps_primary_secondary_categories_consistent() {
+        let normalizedByInitializerItem = Item(
+            name: "机械键盘",
+            wishPriceCents: 89999,
+            primaryCategoryRawValue: ItemPrimaryCategory.home.rawValue,
+            secondaryCategoryRawValue: ItemSecondaryCategory.keyboard.rawValue
+        )
+
+        XCTAssertEqual(normalizedByInitializerItem.secondaryCategory, .keyboard)
+        XCTAssertEqual(normalizedByInitializerItem.primaryCategory, .digital)
+
+        let explicitPrimaryItem = Item(
+            name: "未知订阅",
+            wishPriceCents: 1999,
+            primaryCategoryRawValue: ItemPrimaryCategory.subscription.rawValue,
+            secondaryCategoryRawValue: ItemSecondaryCategory.other.rawValue
+        )
+
+        XCTAssertEqual(explicitPrimaryItem.secondaryCategory, .other)
+        XCTAssertEqual(explicitPrimaryItem.primaryCategory, .subscription)
+
+        explicitPrimaryItem.secondaryCategory = .coffeeMachine
+        XCTAssertEqual(explicitPrimaryItem.secondaryCategory, .coffeeMachine)
+        XCTAssertEqual(explicitPrimaryItem.primaryCategory, .appliance)
+
+        explicitPrimaryItem.primaryCategory = .beauty
+        XCTAssertEqual(explicitPrimaryItem.primaryCategory, .appliance)
     }
 }

@@ -95,10 +95,10 @@ final class Item {
         wishPriceCents: Int,
         primaryCategoryRawValue: String = ItemPrimaryCategory.other.rawValue,
         secondaryCategoryRawValue: String = ItemSecondaryCategory.other.rawValue,
-        categorySourceRawValue: String = CopyCategorySource.autoDetected.rawValue,
+        categorySourceRawValue: String = CopyCategorySource.unresolved.rawValue,
         categoryConfidenceRawValue: String = CopyConfidence.low.rawValue,
         behaviorTagsRawValue: [String] = [],
-        behaviorTagSourceRawValue: String = CopyTagSource.inferred.rawValue,
+        behaviorTagSourceRawValue: String = CopyTagSource.unresolved.rawValue,
         cooldownDays: Int? = nil,
         cooldownEndAt: Date? = nil,
         decision: CooldownDecision? = nil,
@@ -118,9 +118,14 @@ final class Item {
         self.status = status
         self.coverImageData = coverImageData
 
+        // 当二级品类已明确时，初始化阶段优先以 taxonomy 映射收敛一级品类，避免落库后出现互相矛盾的数据。
+        let normalizedCategoryRawValues = Item.normalizedCategoryRawValues(
+            primaryCategoryRawValue: primaryCategoryRawValue,
+            secondaryCategoryRawValue: secondaryCategoryRawValue
+        )
         self.wishPriceCents = max(0, wishPriceCents)
-        self.primaryCategoryRawValue = primaryCategoryRawValue
-        self.secondaryCategoryRawValue = secondaryCategoryRawValue
+        self.primaryCategoryRawValue = normalizedCategoryRawValues.primary
+        self.secondaryCategoryRawValue = normalizedCategoryRawValues.secondary
         self.categorySourceRawValue = categorySourceRawValue
         self.categoryConfidenceRawValue = categoryConfidenceRawValue
         self.behaviorTagsRawValue = behaviorTagsRawValue
@@ -157,21 +162,64 @@ final class Item {
 
 // MARK: - 业务辅助计算
 extension Item {
+    /// 统一收敛主次品类原始值，避免持久化层保存彼此矛盾的 taxonomy 关系。
+    /// - Parameters:
+    ///   - primaryCategoryRawValue: 一级品类原始值，可能来自用户输入或历史数据。
+    ///   - secondaryCategoryRawValue: 二级品类原始值，若已明确则拥有更高优先级。
+    /// - Returns: 已收敛的一二级品类原始值元组。
+    private static func normalizedCategoryRawValues(
+        primaryCategoryRawValue: String,
+        secondaryCategoryRawValue: String
+    ) -> (primary: String, secondary: String) {
+        let normalizedSecondaryCategory = ItemSecondaryCategory(rawValue: secondaryCategoryRawValue) ?? .other
+
+        // 二级品类一旦明确，就始终以其映射的一级品类为准，避免业务层出现不一致状态。
+        if normalizedSecondaryCategory != .other {
+            return (
+                normalizedSecondaryCategory.primaryCategory.rawValue,
+                normalizedSecondaryCategory.rawValue
+            )
+        }
+
+        // 当二级品类未知时，允许一级品类保留显式值；非法值则保守回退到 `.other`。
+        let normalizedPrimaryCategory = ItemPrimaryCategory(rawValue: primaryCategoryRawValue) ?? .other
+        return (
+            normalizedPrimaryCategory.rawValue,
+            normalizedSecondaryCategory.rawValue
+        )
+    }
+
     /// 一级品类的业务语义包装；当历史值异常时回退到 `.other`。
     var primaryCategory: ItemPrimaryCategory {
         get { ItemPrimaryCategory(rawValue: primaryCategoryRawValue) ?? .other }
-        set { primaryCategoryRawValue = newValue.rawValue }
+        set {
+            let currentSecondaryCategory = ItemSecondaryCategory(rawValue: secondaryCategoryRawValue) ?? .other
+
+            // 当二级品类已经明确时，一级品类只能服从二级品类的 taxonomy 映射，避免 setter 重新制造不一致状态。
+            guard currentSecondaryCategory == .other else {
+                primaryCategoryRawValue = currentSecondaryCategory.primaryCategory.rawValue
+                return
+            }
+
+            primaryCategoryRawValue = newValue.rawValue
+        }
     }
 
     /// 二级品类的业务语义包装；当历史值异常时回退到 `.other`。
     var secondaryCategory: ItemSecondaryCategory {
         get { ItemSecondaryCategory(rawValue: secondaryCategoryRawValue) ?? .other }
-        set { secondaryCategoryRawValue = newValue.rawValue }
+        set {
+            secondaryCategoryRawValue = newValue.rawValue
+
+            // 只有在二级品类明确时才收敛一级品类；`.other` 代表未知，保留显式一级品类更符合业务语义。
+            guard newValue != .other else { return }
+            primaryCategoryRawValue = newValue.primaryCategory.rawValue
+        }
     }
 
-    /// 品类来源的业务语义包装；异常值回退到自动识别，避免界面崩溃。
+    /// 品类来源的业务语义包装；异常值回退到未处理态，避免把未知状态误报为已自动识别。
     var categorySource: CopyCategorySource {
-        get { CopyCategorySource(rawValue: categorySourceRawValue) ?? .autoDetected }
+        get { CopyCategorySource(rawValue: categorySourceRawValue) ?? .unresolved }
         set { categorySourceRawValue = newValue.rawValue }
     }
 
@@ -187,9 +235,9 @@ extension Item {
         set { behaviorTagsRawValue = newValue.map(\.rawValue) }
     }
 
-    /// 行为标签来源的业务语义包装；异常值默认回退到系统推断。
+    /// 行为标签来源的业务语义包装；异常值默认回退到未处理态，避免误导上层流程。
     var behaviorTagSource: CopyTagSource {
-        get { CopyTagSource(rawValue: behaviorTagSourceRawValue) ?? .inferred }
+        get { CopyTagSource(rawValue: behaviorTagSourceRawValue) ?? .unresolved }
         set { behaviorTagSourceRawValue = newValue.rawValue }
     }
 
