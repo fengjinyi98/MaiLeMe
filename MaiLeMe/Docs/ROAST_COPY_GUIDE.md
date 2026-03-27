@@ -1,6 +1,12 @@
 # 毒舌文案管理指南
 
-最后更新：2026-03-03
+最后更新：2026-03-28
+
+> 注意：本文件保留为兼容入口说明，**不再是最新真相源**。  
+> 最新结构化文案设计请优先阅读：
+> - `COPY_SYSTEM_ARCHITECTURE.md`
+> - `CATEGORY_TAXONOMY.md`
+> - `COPY_EDITOR_GUIDE.md`
 
 ## 目标
 
@@ -10,8 +16,10 @@
 
 ## 文案中心位置
 
-- 主文件：`Utils/Constants.swift`
-- 命名空间：`AppConstants.RoastCopy`
+- 结构化资源：`Resources/RoastCopy/modules/*.json`
+- 加载入口：`Services/CopyLibraryLoader.swift`
+- 解析入口：`Services/CopyResolver.swift`
+- 兼容命名空间：`AppConstants.RoastCopy`
 
 ## 目前已收口的场景
 
@@ -33,7 +41,7 @@
 
 ## 扩充文案建议
 
-1. 只改 `AppConstants.RoastCopy` 模板池，不直接在页面写新文案。
+1. 优先修改 `Resources/RoastCopy/modules/*.json`，不要直接在页面写新文案。
 2. 新增模板时保持“短句 + 强语气 + 可分享”风格。
-3. 变量占位统一用 `%@`，并通过 `format(...)` 注入参数。
+3. 变量占位统一使用 `{{variable}}`，并在 `variables` 字段中显式声明。
 4. 每个场景建议至少保留 3-5 条模板，避免重复感。

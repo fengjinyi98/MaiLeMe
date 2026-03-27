@@ -1,6 +1,6 @@
 # 买了么（MaiLeMe）项目文档
 
-最后更新：2026-03-04
+最后更新：2026-03-28
 
 ## 文档索引
 
@@ -12,6 +12,10 @@
 6. `RELEASE_CHECKLIST_V1.md`：上线前功能/合规/回归检查清单
 7. `PRIVACY_COMPLIANCE_V1.md`：隐私与权限合规口径说明
 8. `KNOWN_ISSUES.md`：已知问题与排查进度追踪
+9. `COPY_SYSTEM_ARCHITECTURE.md`：本地毒舌文案系统架构说明
+10. `CATEGORY_TAXONOMY.md`：条目分类与行为标签体系说明
+11. `COPY_EDITOR_GUIDE.md`：结构化文案资源编辑指南
+12. `ROAST_COPY_GUIDE.md`：旧版毒舌文案指南（已补充迁移说明）
 
 ## 当前阶段
 

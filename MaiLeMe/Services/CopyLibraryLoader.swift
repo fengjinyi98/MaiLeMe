@@ -41,9 +41,17 @@ final class CopyLibraryLoader {
     /// - Throws: 当任一模块文件缺失或 JSON 解码失败时抛出错误。
     func load() throws -> CopyLibrary {
         let entries = try CopyModule.allCases.flatMap { module in
-            try decodeFile(named: module.resourceFileName)
+            try loadEntries(for: module)
         }
         return CopyLibrary(entries: entries)
+    }
+
+    /// 加载单个模块的全部文案资源。
+    /// - Parameter module: `CopyModule`，需要读取的模块。
+    /// - Returns: `[RoastCopyEntry]`，该模块对应 JSON 文件中的全部条目。
+    /// - Throws: 当模块文件缺失或 JSON 解码失败时抛出错误。
+    func loadEntries(for module: CopyModule) throws -> [RoastCopyEntry] {
+        try decodeFile(named: module.resourceFileName)
     }
 
     /// 解码单个模块文件。

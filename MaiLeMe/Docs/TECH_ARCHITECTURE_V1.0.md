@@ -1,6 +1,6 @@
 # 买了么（MaiLeMe）V1.0 技术架构文档
 
-最后更新：2026-02-28  
+最后更新：2026-03-28  
 版本：V1.0（MVP）
 
 ## 1. 技术选型
@@ -70,7 +70,13 @@
 - 规则示例：
   - 连续 7 天未使用：轻提醒
   - 连续 30 天未使用：强提醒 + 毒舌文案
-- 文案池放入 `Constants.swift`，支持后续 A/B 扩展
+- 毒舌文案已升级为结构化资源系统：
+  - 资源：`Resources/RoastCopy/modules/*.json`
+  - 加载：`CopyLibraryLoader`
+  - 解析：`CopyResolver`
+  - 兼容层：`AppConstants.RoastCopy`
+  - 校验：`CopyAssetValidator`
+- `Constants.swift` 现在主要承担兼容入口与 fallback 责任，不再是唯一文案真相源
 
 ## 7. 可测试性建议
 

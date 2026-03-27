@@ -1,6 +1,6 @@
 # 买了么（MaiLeMe）目录结构规范
 
-最后更新：2026-02-28
+最后更新：2026-03-28
 
 ## 1. 目标目录结构
 
@@ -31,7 +31,11 @@ MaiLeMe/
 - `Views/Screens/ExtractorScreen.swift`：闲置榨干机页面
 - `Views/Screens/AddItemScreen.swift`：新增物品页面
 - `Services/NotificationManager.swift`：本地通知
-- `Utils/Constants.swift`：常量与毒舌文案池
+- `Utils/Constants.swift`：兼容常量入口与毒舌文案兼容层
+- `Services/CopyLibraryLoader.swift`：结构化文案资源加载器
+- `Services/CopyResolver.swift`：结构化文案解析器
+- `Services/CopyAssetValidator.swift`：结构化文案资源校验器
+- `Resources/RoastCopy/modules/*.json`：结构化毒舌文案资源
 - `Utils/Date+Extension.swift`：日期计算
 - `Resources/Assets.xcassets`：图片与图标资源
 
