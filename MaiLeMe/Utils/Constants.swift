@@ -902,7 +902,8 @@ enum AppConstants {
                 primaryCategory: primaryCategory,
                 secondaryCategory: secondaryCategory,
                 behaviorTags: behaviorTags,
-                intensityCap: .high
+                intensityCap: .high,
+                allowRandom: false
             )
         }
 
@@ -945,7 +946,8 @@ enum AppConstants {
                     primaryCategory: primaryCategory,
                     secondaryCategory: secondaryCategory,
                     behaviorTags: behaviorTags,
-                    intensityCap: .high
+                    intensityCap: .high,
+                    allowRandom: false
                 )
             }
             if idleDays >= 30 {
@@ -965,7 +967,8 @@ enum AppConstants {
                     primaryCategory: primaryCategory,
                     secondaryCategory: secondaryCategory,
                     behaviorTags: behaviorTags,
-                    intensityCap: .high
+                    intensityCap: .high,
+                    allowRandom: false
                 )
             }
             let fallback = pickStable(
@@ -984,7 +987,8 @@ enum AppConstants {
                 primaryCategory: primaryCategory,
                 secondaryCategory: secondaryCategory,
                 behaviorTags: behaviorTags,
-                intensityCap: .high
+                intensityCap: .high,
+                allowRandom: false
             )
         }
 

@@ -370,4 +370,72 @@ final class CopyResolverTests: XCTestCase {
         XCTAssertEqual(sceneBySlot[.badge], "first_use_immediate")
         XCTAssertEqual(sceneBySlot[.roast], "first_use")
     }
+
+    /// 吃灰挽救页的主/副点评应把条目语义与槽位信息透传给 resolver，并分别命中 `.primary` / `.secondary`。
+    @MainActor
+    func test_idle_rescue_copy_uses_item_category_context_for_primary_and_secondary_slots() throws {
+        clearStandardCopyMemory()
+        let item = makeOfficeDesktopPurchasedItem(
+            id: UUID(uuidString: "44444444-4444-4444-4444-444444444444")!,
+            purchaseAt: Date(timeIntervalSince1970: 1_741_000_000)
+        )
+        item.lastUsedAt = Calendar.current.date(byAdding: .day, value: -40, to: Date())!
+        item.usageCount = 3
+
+        _ = AppConstants.RoastCopy.idleRescuePrimary(
+            idleDays: 40,
+            itemName: item.displayName,
+            itemID: item.id,
+            primaryCategory: item.primaryCategory,
+            secondaryCategory: item.secondaryCategory,
+            behaviorTags: item.behaviorTags
+        )
+        _ = AppConstants.RoastCopy.idleRescueSecondary(
+            idleDays: 40,
+            usageCount: item.usageCount,
+            itemName: item.displayName,
+            itemID: item.id,
+            primaryCategory: item.primaryCategory,
+            secondaryCategory: item.secondaryCategory,
+            behaviorTags: item.behaviorTags
+        )
+
+        let records = try loadStandardCopyMemoryRecords().filter { record in
+            record.module == .idleRescue && record.itemID == item.id
+        }
+        let sceneBySlot = Dictionary(uniqueKeysWithValues: records.map { ($0.slot, $0.scene) })
+
+        XCTAssertEqual(Set(records.map(\.slot)), Set<CopySlot>([.primary, .secondary]))
+        XCTAssertEqual(sceneBySlot[.primary], "primary_heavy")
+        XCTAssertEqual(sceneBySlot[.secondary], "secondary_heavy")
+    }
+
+    /// 稳定续打路径应继续由“低空窗”触发，而不是悄悄变成“累计使用次数达到阈值”才触发。
+    @MainActor
+    func test_checkin_steady_path_still_uses_low_idle_rule() throws {
+        clearStandardCopyMemory()
+        let item = makeOfficeDesktopPurchasedItem(
+            id: UUID(uuidString: "55555555-5555-5555-5555-555555555555")!,
+            purchaseAt: Date(timeIntervalSince1970: 1_741_000_000)
+        )
+        item.usageCount = 2
+        item.lastUsedAt = Calendar.current.date(byAdding: .day, value: -1, to: Date())!
+
+        _ = ExtractorViewModel().makeCheckinCelebration(
+            for: item,
+            previousUsageCount: item.usageCount,
+            previousIdleDays: 1,
+            usedAt: Date()
+        )
+
+        let records = try loadStandardCopyMemoryRecords().filter { record in
+            record.module == .checkin && record.itemID == item.id
+        }
+        let sceneBySlot = Dictionary(uniqueKeysWithValues: records.map { ($0.slot, $0.scene) })
+
+        XCTAssertEqual(sceneBySlot[.title], "steady_high_usage")
+        XCTAssertEqual(sceneBySlot[.subtitle], "steady_high_usage")
+        XCTAssertEqual(sceneBySlot[.badge], "steady_high_usage")
+        XCTAssertEqual(sceneBySlot[.roast], "default")
+    }
 }

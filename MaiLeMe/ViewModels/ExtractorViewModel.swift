@@ -486,7 +486,7 @@ final class ExtractorViewModel {
                 ),
                 isBigMoment: true
             )
-        } else if currentUsageCount >= 10 {
+        } else if idle <= 1 {
             let fallback = AppConstants.RoastCopy.checkinSteadyBundle()
             let copy = AppConstants.RoastCopy.checkinBundle(
                 scene: "steady_high_usage",
