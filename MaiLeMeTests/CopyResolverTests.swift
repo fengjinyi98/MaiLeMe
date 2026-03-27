@@ -3,6 +3,20 @@ import XCTest
 
 /// 验证文案解析器能根据场景、品类与行为标签选择最合适的候选，并避免误命中兜底结果。
 final class CopyResolverTests: XCTestCase {
+    /// 解析 `CopyMemoryStore` 写入到标准偏好中的最近命中文案记录，便于集成测试验证核心流程是否真的走了 resolver。
+    private struct RecentCopyMemoryRecord: Decodable {
+        /// 文案唯一 ID。
+        let copyID: String
+        /// 文案所属模块。
+        let module: CopyModule
+        /// 文案命中时的场景。
+        let scene: String
+        /// 文案槽位。
+        let slot: CopySlot
+        /// 关联条目 ID；若核心流程没有把条目语义透传进去，这里通常会是 `nil`。
+        let itemID: UUID?
+    }
+
     /// 构建测试用条目，避免每个用例重复手写大段初始化代码。
     /// - Parameters:
     ///   - id: `String`，文案资源 ID。
@@ -65,6 +79,51 @@ final class CopyResolverTests: XCTestCase {
         let memoryStore = CopyMemoryStore(defaults: defaults)
         let resolver = CopyResolver(library: library, memoryStore: memoryStore)
         return (resolver, memoryStore)
+    }
+
+    /// 清空标准 `UserDefaults` 中的最近文案历史，避免不同集成测试相互污染。
+    private func clearStandardCopyMemory() {
+        UserDefaults.standard.removeObject(forKey: "copy.memory.recent")
+    }
+
+    /// 读取标准 `UserDefaults` 中由 `CopyMemoryStore` 写入的最近文案历史。
+    /// - Returns: `[RecentCopyMemoryRecord]`，按写入顺序解码后的历史记录。
+    /// - Throws: 当底层 JSON 结构异常时抛出错误，帮助定位兼容层写入问题。
+    private func loadStandardCopyMemoryRecords() throws -> [RecentCopyMemoryRecord] {
+        guard let data = UserDefaults.standard.data(forKey: "copy.memory.recent") else {
+            return []
+        }
+        return try JSONDecoder().decode([RecentCopyMemoryRecord].self, from: data)
+    }
+
+    /// 构造一个带有办公/台式机分类与效率幻觉标签的已购条目，用于验证核心流程是否把条目语义透传给 resolver。
+    /// - Parameters:
+    ///   - id: `UUID`，条目主键。
+    ///   - purchaseAt: `Date`，购买时间。
+    /// - Returns: `Item`，用于决策/打卡文案集成测试的样本条目。
+    private func makeOfficeDesktopPurchasedItem(
+        id: UUID = UUID(uuidString: "22222222-2222-2222-2222-222222222222")!,
+        purchaseAt: Date = Date(timeIntervalSince1970: 1_741_000_000)
+    ) -> Item {
+        Item(
+            id: id,
+            name: "Apple Mac mini M4",
+            createdAt: purchaseAt,
+            status: .purchased,
+            wishPriceCents: 399_999,
+            primaryCategoryRawValue: ItemPrimaryCategory.office.rawValue,
+            secondaryCategoryRawValue: ItemSecondaryCategory.desktopComputer.rawValue,
+            categorySourceRawValue: CopyCategorySource.userSelected.rawValue,
+            categoryConfidenceRawValue: CopyConfidence.high.rawValue,
+            behaviorTagsRawValue: [
+                ItemBehaviorTag.efficiencyFantasy.rawValue,
+                ItemBehaviorTag.selfImprovement.rawValue
+            ],
+            behaviorTagSourceRawValue: CopyTagSource.userAdjusted.rawValue,
+            purchaseAt: purchaseAt,
+            purchasePriceCents: 399_999,
+            usageCount: 0
+        )
     }
 
     /// 构建默认的决策场景上下文，避免测试对无关字段重复赋值。
@@ -245,5 +304,70 @@ final class CopyResolverTests: XCTestCase {
         XCTAssertTrue(recentDecisionCopyIDs.contains("decision_saved_title_001"))
         XCTAssertTrue(recentDecisionCopyIDs.contains("decision_saved_subtitle_001"))
         XCTAssertTrue(recentDecisionCopyIDs.contains("decision_saved_action_001"))
+    }
+
+    /// 决策仪式 payload 应把条目 ID 与语义上下文透传给 resolver，确保标题/副标题/按钮/点评都来自 item-scoped 的新引擎。
+    @MainActor
+    func test_decision_payload_uses_item_category_context() throws {
+        clearStandardCopyMemory()
+        let item = makeOfficeDesktopPurchasedItem()
+
+        let payload = DarkRoomViewModel().makeDecisionCelebration(
+            for: item,
+            outcome: .purchased
+        )
+
+        XCTAssertFalse(payload.title.isEmpty)
+        XCTAssertFalse(payload.subtitle.isEmpty)
+        XCTAssertFalse(payload.actionTitle.isEmpty)
+        XCTAssertFalse(payload.roastLine.isEmpty)
+
+        let records = try loadStandardCopyMemoryRecords().filter { record in
+            record.module == .decision && record.itemID == item.id
+        }
+
+        XCTAssertEqual(
+            Set(records.map(\.slot)),
+            Set<CopySlot>([.title, .subtitle, .actionTitle, .roast])
+        )
+        XCTAssertTrue(records.allSatisfy { $0.scene == "decision_purchased" })
+    }
+
+    /// 打卡仪式 payload 应按条目语义走 resolver；同时 roast 的 scene 需要与 title/subtitle/badge 分开解释，不能共用同一 scene。
+    @MainActor
+    func test_checkin_payload_uses_item_category_context_and_slot_specific_scenes() throws {
+        clearStandardCopyMemory()
+        let usedAt = Date(timeIntervalSince1970: 1_741_000_000)
+        let item = makeOfficeDesktopPurchasedItem(
+            id: UUID(uuidString: "33333333-3333-3333-3333-333333333333")!,
+            purchaseAt: usedAt
+        )
+
+        let payload = ExtractorViewModel().makeCheckinCelebration(
+            for: item,
+            previousUsageCount: 0,
+            previousIdleDays: 0,
+            usedAt: usedAt
+        )
+
+        XCTAssertFalse(payload.title.isEmpty)
+        XCTAssertFalse(payload.subtitle.isEmpty)
+        XCTAssertFalse(payload.badge.isEmpty)
+        XCTAssertFalse(payload.roastLine.isEmpty)
+        XCTAssertTrue(payload.isBigMoment)
+
+        let records = try loadStandardCopyMemoryRecords().filter { record in
+            record.module == .checkin && record.itemID == item.id
+        }
+        let sceneBySlot = Dictionary(uniqueKeysWithValues: records.map { ($0.slot, $0.scene) })
+
+        XCTAssertEqual(
+            Set(records.map(\.slot)),
+            Set<CopySlot>([.title, .subtitle, .badge, .roast])
+        )
+        XCTAssertEqual(sceneBySlot[.title], "first_use_immediate")
+        XCTAssertEqual(sceneBySlot[.subtitle], "first_use_immediate")
+        XCTAssertEqual(sceneBySlot[.badge], "first_use_immediate")
+        XCTAssertEqual(sceneBySlot[.roast], "first_use")
     }
 }

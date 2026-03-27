@@ -33,14 +33,25 @@ struct IdleRescueScreen: View {
     }
 
     private var roastLine: String {
-        AppConstants.RoastCopy.idleRescuePrimary(idleDays: idleDays, itemID: item.id)
+        AppConstants.RoastCopy.idleRescuePrimary(
+            idleDays: idleDays,
+            itemName: item.displayName,
+            itemID: item.id,
+            primaryCategory: item.primaryCategory,
+            secondaryCategory: item.secondaryCategory,
+            behaviorTags: item.behaviorTags
+        )
     }
 
     private var secondaryRoastLine: String {
         AppConstants.RoastCopy.idleRescueSecondary(
             idleDays: idleDays,
             usageCount: item.usageCount,
-            itemID: item.id
+            itemName: item.displayName,
+            itemID: item.id,
+            primaryCategory: item.primaryCategory,
+            secondaryCategory: item.secondaryCategory,
+            behaviorTags: item.behaviorTags
         )
     }
 

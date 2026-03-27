@@ -226,14 +226,32 @@ final class DarkRoomViewModel {
         for item: Item,
         outcome: DarkRoomDecisionOutcome
     ) -> DarkRoomDecisionCelebrationPayload {
+        let itemName = item.displayName
+        let primaryCategory = item.primaryCategory
+        let secondaryCategory = item.secondaryCategory
+        let behaviorTags = item.behaviorTags
+
         switch outcome {
         case .saved:
             let savedCents = max(item.savedAmountCents, item.wishPriceCents)
-            let copy = AppConstants.RoastCopy.decisionSavedBundle()
+            let copy = AppConstants.RoastCopy.decisionSavedBundle(
+                itemName: itemName,
+                itemID: item.id,
+                primaryCategory: primaryCategory,
+                secondaryCategory: secondaryCategory,
+                behaviorTags: behaviorTags
+            )
             return DarkRoomDecisionCelebrationPayload(
                 title: copy.title,
                 subtitle: copy.subtitle,
-                roastLine: AppConstants.RoastCopy.decisionCelebrationRoastLine(isSaved: true),
+                roastLine: AppConstants.RoastCopy.decisionCelebrationRoastLine(
+                    isSaved: true,
+                    itemName: itemName,
+                    itemID: item.id,
+                    primaryCategory: primaryCategory,
+                    secondaryCategory: secondaryCategory,
+                    behaviorTags: behaviorTags
+                ),
                 badge: "忍住没买",
                 iconSystemName: "shield.checkered",
                 metricTitle: "省下金额",
@@ -243,11 +261,24 @@ final class DarkRoomViewModel {
             )
         case .purchased:
             let purchaseCents = item.purchasePriceCents ?? item.wishPriceCents
-            let copy = AppConstants.RoastCopy.decisionPurchasedBundle()
+            let copy = AppConstants.RoastCopy.decisionPurchasedBundle(
+                itemName: itemName,
+                itemID: item.id,
+                primaryCategory: primaryCategory,
+                secondaryCategory: secondaryCategory,
+                behaviorTags: behaviorTags
+            )
             return DarkRoomDecisionCelebrationPayload(
                 title: copy.title,
                 subtitle: copy.subtitle,
-                roastLine: AppConstants.RoastCopy.decisionCelebrationRoastLine(isSaved: false),
+                roastLine: AppConstants.RoastCopy.decisionCelebrationRoastLine(
+                    isSaved: false,
+                    itemName: itemName,
+                    itemID: item.id,
+                    primaryCategory: primaryCategory,
+                    secondaryCategory: secondaryCategory,
+                    behaviorTags: behaviorTags
+                ),
                 badge: "还是买了",
                 iconSystemName: "cart.fill.badge.plus",
                 metricTitle: "买入金额",

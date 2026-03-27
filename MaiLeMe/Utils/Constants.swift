@@ -573,6 +573,32 @@ enum AppConstants {
             )
         }
 
+        /// 冷静期决策仪式页毒舌点评：支持透传条目语义，确保点评也进入 item-scoped resolver 选择链路。
+        static func decisionCelebrationRoastLine(
+            isSaved: Bool,
+            itemName: String,
+            itemID: UUID?,
+            primaryCategory: ItemPrimaryCategory,
+            secondaryCategory: ItemSecondaryCategory,
+            behaviorTags: [ItemBehaviorTag]
+        ) -> String {
+            let fallback = decisionCelebrationRoastLine(isSaved: isSaved)
+            let scene = isSaved ? "decision_saved" : "decision_purchased"
+
+            return resolveCopyText(
+                module: .decision,
+                scene: scene,
+                slot: .roast,
+                fallback: fallback,
+                itemName: itemName,
+                itemID: itemID,
+                primaryCategory: primaryCategory,
+                secondaryCategory: secondaryCategory,
+                behaviorTags: behaviorTags,
+                intensityCap: .medium
+            )
+        }
+
         /// 冷静期决策分享结果文案。
         static func decisionShareOutcome(isSaved: Bool, seedKey: String) -> String {
             if isSaved {
@@ -687,6 +713,62 @@ enum AppConstants {
             )
         }
 
+        /// 打卡仪式文案组合：把 title/subtitle/badge 统一走 resolver，避免核心流程继续停留在静态数组。
+        static func checkinBundle(
+            scene: String,
+            fallback: CheckinBundle,
+            itemName: String,
+            itemID: UUID?,
+            primaryCategory: ItemPrimaryCategory,
+            secondaryCategory: ItemSecondaryCategory,
+            behaviorTags: [ItemBehaviorTag],
+            variables: [String: String] = [:]
+        ) -> CheckinBundle {
+            guard let resolver else {
+                assertionFailure("毒舌文案兼容层未能初始化 resolver，已回退到旧版打卡 bundle。")
+                return fallback
+            }
+
+            return CheckinBundle(
+                title: resolveCheckinText(
+                    resolver: resolver,
+                    scene: scene,
+                    slot: .title,
+                    fallback: fallback.title,
+                    itemName: itemName,
+                    itemID: itemID,
+                    primaryCategory: primaryCategory,
+                    secondaryCategory: secondaryCategory,
+                    behaviorTags: behaviorTags,
+                    variables: variables
+                ),
+                subtitle: resolveCheckinText(
+                    resolver: resolver,
+                    scene: scene,
+                    slot: .subtitle,
+                    fallback: fallback.subtitle,
+                    itemName: itemName,
+                    itemID: itemID,
+                    primaryCategory: primaryCategory,
+                    secondaryCategory: secondaryCategory,
+                    behaviorTags: behaviorTags,
+                    variables: variables
+                ),
+                badge: resolveCheckinText(
+                    resolver: resolver,
+                    scene: scene,
+                    slot: .badge,
+                    fallback: fallback.badge,
+                    itemName: itemName,
+                    itemID: itemID,
+                    primaryCategory: primaryCategory,
+                    secondaryCategory: secondaryCategory,
+                    behaviorTags: behaviorTags,
+                    variables: variables
+                )
+            )
+        }
+
         /// 打卡仪式页毒舌点评。
         static func checkinCelebrationRoastLine(usageCount: Int, isBigMoment: Bool) -> String {
             if usageCount == 1 {
@@ -699,6 +781,32 @@ enum AppConstants {
                 return pickRandom(from: checkinHighUsageRoastTemplates, fallback: "打卡强度离谱，物品都怕你不给它下班。")
             }
             return pickRandom(from: checkinDefaultRoastTemplates, fallback: "继续连击，别让它回到“买前刚需、买后装饰”的老路。")
+        }
+
+        /// 打卡仪式页毒舌点评：由调用方显式提供 roast scene，避免把 title/badge 的业务场景误复用于点评槽位。
+        static func checkinCelebrationRoastLine(
+            scene: String,
+            fallback: String,
+            itemName: String,
+            itemID: UUID?,
+            primaryCategory: ItemPrimaryCategory,
+            secondaryCategory: ItemSecondaryCategory,
+            behaviorTags: [ItemBehaviorTag],
+            variables: [String: String] = [:]
+        ) -> String {
+            resolveCopyText(
+                module: .checkin,
+                scene: scene,
+                slot: .roast,
+                fallback: fallback,
+                itemName: itemName,
+                itemID: itemID,
+                primaryCategory: primaryCategory,
+                secondaryCategory: secondaryCategory,
+                behaviorTags: behaviorTags,
+                intensityCap: .medium,
+                variables: variables
+            )
         }
 
         /// 打卡分享文本。
@@ -728,58 +836,155 @@ enum AppConstants {
         // MARK: - 吃灰挽救文案生成入口
         /// 吃灰挽救主点评。
         static func idleRescuePrimary(idleDays: Int, itemID: UUID) -> String {
+            idleRescuePrimary(
+                idleDays: idleDays,
+                itemName: "",
+                itemID: itemID,
+                primaryCategory: .other,
+                secondaryCategory: .other,
+                behaviorTags: []
+            )
+        }
+
+        /// 吃灰挽救主点评：支持把条目语义透传给 resolver，让不同品类走不同毒舌文案。
+        static func idleRescuePrimary(
+            idleDays: Int,
+            itemName: String,
+            itemID: UUID,
+            primaryCategory: ItemPrimaryCategory,
+            secondaryCategory: ItemSecondaryCategory,
+            behaviorTags: [ItemBehaviorTag]
+        ) -> String {
             let templates: [String]
             let fallback: String
+            let scene: String
             switch idleDays {
             case ..<7:
                 templates = idlePrimaryLightTemplates
                 fallback = "关系还没凉透，今晚用一次就能续命。"
+                scene = "primary_light"
             case 7..<14:
                 templates = idlePrimaryWarmTemplates
                 fallback = "你俩还不算陌生，赶紧打卡别让它转正成摆件。"
+                scene = "primary_warm"
             case 14..<30:
                 templates = idlePrimaryMidTemplates
                 fallback = "它不是装饰品，你也不是样板间策展人。"
+                scene = "primary_mid"
             case 30..<60:
                 templates = idlePrimaryHeavyTemplates
                 fallback = "吃灰一个月了，不放闲鱼是准备传家吗？"
+                scene = "primary_heavy"
             case 60..<120:
                 templates = idlePrimarySevereTemplates
                 fallback = "这件物品目前唯一作用：提醒你当时下单很快。"
+                scene = "primary_severe"
             default:
                 templates = idlePrimaryExtremeTemplates
                 fallback = "吃灰超百天了，再不处置就只能当冲动消费纪念碑。"
+                scene = "primary_extreme"
             }
-            return pickStable(
+
+            let stableFallback = pickStable(
                 from: templates,
                 fallback: fallback,
                 seedKey: itemID.uuidString,
                 extraSeed: idleDays
             )
+
+            return resolveCopyText(
+                module: .idleRescue,
+                scene: scene,
+                slot: .primary,
+                fallback: stableFallback,
+                itemName: itemName,
+                itemID: itemID,
+                primaryCategory: primaryCategory,
+                secondaryCategory: secondaryCategory,
+                behaviorTags: behaviorTags,
+                intensityCap: .high
+            )
         }
 
         /// 吃灰挽救副点评。
         static func idleRescueSecondary(idleDays: Int, usageCount: Int, itemID: UUID) -> String {
+            idleRescueSecondary(
+                idleDays: idleDays,
+                usageCount: usageCount,
+                itemName: "",
+                itemID: itemID,
+                primaryCategory: .other,
+                secondaryCategory: .other,
+                behaviorTags: []
+            )
+        }
+
+        /// 吃灰挽救副点评：支持按条目语义与场景路由到 resolver-backed 文案。
+        static func idleRescueSecondary(
+            idleDays: Int,
+            usageCount: Int,
+            itemName: String,
+            itemID: UUID,
+            primaryCategory: ItemPrimaryCategory,
+            secondaryCategory: ItemSecondaryCategory,
+            behaviorTags: [ItemBehaviorTag]
+        ) -> String {
             if usageCount == 0 {
-                return pickStable(
+                let fallback = pickStable(
                     from: idleSecondaryNeverUsedTemplates,
                     fallback: "买来从未开张，属于“理想中的自己在用，现实中的你在看”。",
                     seedKey: itemID.uuidString
                 )
+                return resolveCopyText(
+                    module: .idleRescue,
+                    scene: "secondary_never_used",
+                    slot: .secondary,
+                    fallback: fallback,
+                    itemName: itemName,
+                    itemID: itemID,
+                    primaryCategory: primaryCategory,
+                    secondaryCategory: secondaryCategory,
+                    behaviorTags: behaviorTags,
+                    intensityCap: .high
+                )
             }
             if idleDays >= 30 {
-                return pickStable(
+                let fallback = pickStable(
                     from: idleSecondaryHeavyTemplates,
                     fallback: "给你两个选项：今晚打卡，或者今晚挂闲鱼。",
                     seedKey: itemID.uuidString,
                     extraSeed: usageCount + idleDays
                 )
+                return resolveCopyText(
+                    module: .idleRescue,
+                    scene: "secondary_heavy",
+                    slot: .secondary,
+                    fallback: fallback,
+                    itemName: itemName,
+                    itemID: itemID,
+                    primaryCategory: primaryCategory,
+                    secondaryCategory: secondaryCategory,
+                    behaviorTags: behaviorTags,
+                    intensityCap: .high
+                )
             }
-            return pickStable(
+            let fallback = pickStable(
                 from: idleSecondaryDefaultTemplates,
                 fallback: "继续拖延只会让转手价继续打折。",
                 seedKey: itemID.uuidString,
                 extraSeed: usageCount
+            )
+            return resolveCopyText(
+                module: .idleRescue,
+                scene: "secondary_default",
+                slot: .secondary,
+                fallback: fallback,
+                itemName: itemName,
+                itemID: itemID,
+                primaryCategory: primaryCategory,
+                secondaryCategory: secondaryCategory,
+                behaviorTags: behaviorTags,
+                intensityCap: .high
             )
         }
 
@@ -964,6 +1169,82 @@ enum AppConstants {
             )
 
             return try resolver.resolveSingle(context).text
+        }
+
+        /// 解析打卡场景下的单个槽位；若资源缺失则仅对当前槽位回退，保证主流程继续可用。
+        private static func resolveCheckinText(
+            resolver: CopyResolver,
+            scene: String,
+            slot: CopySlot,
+            fallback: String,
+            itemName: String,
+            itemID: UUID?,
+            primaryCategory: ItemPrimaryCategory,
+            secondaryCategory: ItemSecondaryCategory,
+            behaviorTags: [ItemBehaviorTag],
+            variables: [String: String]
+        ) -> String {
+            let context = CopyContext(
+                module: .checkin,
+                scene: scene,
+                slot: slot,
+                itemID: itemID,
+                itemName: itemName,
+                primaryCategory: primaryCategory,
+                secondaryCategory: secondaryCategory,
+                behaviorTags: behaviorTags,
+                intensityCap: .medium,
+                allowRandom: true,
+                variables: variables
+            )
+
+            do {
+                return try resolver.resolveSingle(context).text
+            } catch {
+                return fallback
+            }
+        }
+
+        /// 解析单条文案并在失败时保守回退到调用方给定的旧文案。
+        private static func resolveCopyText(
+            module: CopyModule,
+            scene: String,
+            slot: CopySlot,
+            fallback: String,
+            itemName: String,
+            itemID: UUID?,
+            primaryCategory: ItemPrimaryCategory,
+            secondaryCategory: ItemSecondaryCategory,
+            behaviorTags: [ItemBehaviorTag],
+            intensityCap: CopyIntensity,
+            allowRandom: Bool = true,
+            variables: [String: String] = [:]
+        ) -> String {
+            guard let resolver else {
+                assertionFailure("毒舌文案兼容层未能初始化 resolver，已回退到旧版槽位文案。")
+                return fallback
+            }
+
+            let context = CopyContext(
+                module: module,
+                scene: scene,
+                slot: slot,
+                itemID: itemID,
+                itemName: itemName,
+                primaryCategory: primaryCategory,
+                secondaryCategory: secondaryCategory,
+                behaviorTags: behaviorTags,
+                intensityCap: intensityCap,
+                allowRandom: allowRandom,
+                variables: variables
+            )
+
+            do {
+                return try resolver.resolveSingle(context).text
+            } catch {
+                assertionFailure("毒舌文案兼容层解析单条文案失败：\(error.localizedDescription)，已回退到旧版槽位文案。")
+                return fallback
+            }
         }
 
         /// 从模板池随机抽取一条并格式化（物品名 + 天数）。

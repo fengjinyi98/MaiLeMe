@@ -304,42 +304,111 @@ final class ExtractorViewModel {
         usedAt: Date
     ) -> CheckinCelebrationPayload {
         let currentUsageCount = previousUsageCount + 1
+        let itemName = item.displayName
+        let primaryCategory = item.primaryCategory
+        let secondaryCategory = item.secondaryCategory
+        let behaviorTags = item.behaviorTags
 
         if previousUsageCount == 0 {
             let daysToFirstUse = firstUseDelayDays(for: item, usedAt: usedAt)
             if daysToFirstUse <= 1 {
-                let copy = AppConstants.RoastCopy.checkinFirstUseImmediateBundle()
+                let fallback = AppConstants.RoastCopy.checkinFirstUseImmediateBundle()
+                let copy = AppConstants.RoastCopy.checkinBundle(
+                    scene: "first_use_immediate",
+                    fallback: fallback,
+                    itemName: itemName,
+                    itemID: item.id,
+                    primaryCategory: primaryCategory,
+                    secondaryCategory: secondaryCategory,
+                    behaviorTags: behaviorTags
+                )
+                let roastFallback = AppConstants.RoastCopy.checkinCelebrationRoastLine(
+                    usageCount: currentUsageCount,
+                    isBigMoment: true
+                )
                 return CheckinCelebrationPayload(
                     title: copy.title,
                     subtitle: copy.subtitle,
                     badge: copy.badge,
                     roastLine: AppConstants.RoastCopy.checkinCelebrationRoastLine(
-                        usageCount: currentUsageCount,
-                        isBigMoment: true
+                        scene: checkinRoastScene(
+                            usageCount: currentUsageCount,
+                            isBigMoment: true
+                        ),
+                        fallback: roastFallback,
+                        itemName: itemName,
+                        itemID: item.id,
+                        primaryCategory: primaryCategory,
+                        secondaryCategory: secondaryCategory,
+                        behaviorTags: behaviorTags
                     ),
                     isBigMoment: true
                 )
             } else if daysToFirstUse >= 30 {
-                let copy = AppConstants.RoastCopy.checkinFirstUseLateBundle(daysToFirstUse: daysToFirstUse)
+                let fallback = AppConstants.RoastCopy.checkinFirstUseLateBundle(daysToFirstUse: daysToFirstUse)
+                let copy = AppConstants.RoastCopy.checkinBundle(
+                    scene: "first_use_late",
+                    fallback: fallback,
+                    itemName: itemName,
+                    itemID: item.id,
+                    primaryCategory: primaryCategory,
+                    secondaryCategory: secondaryCategory,
+                    behaviorTags: behaviorTags,
+                    variables: ["daysToFirstUse": "\(daysToFirstUse)"]
+                )
+                let roastFallback = AppConstants.RoastCopy.checkinCelebrationRoastLine(
+                    usageCount: currentUsageCount,
+                    isBigMoment: true
+                )
                 return CheckinCelebrationPayload(
                     title: copy.title,
                     subtitle: copy.subtitle,
                     badge: copy.badge,
                     roastLine: AppConstants.RoastCopy.checkinCelebrationRoastLine(
-                        usageCount: currentUsageCount,
-                        isBigMoment: true
+                        scene: checkinRoastScene(
+                            usageCount: currentUsageCount,
+                            isBigMoment: true
+                        ),
+                        fallback: roastFallback,
+                        itemName: itemName,
+                        itemID: item.id,
+                        primaryCategory: primaryCategory,
+                        secondaryCategory: secondaryCategory,
+                        behaviorTags: behaviorTags,
+                        variables: ["daysToFirstUse": "\(daysToFirstUse)"]
                     ),
                     isBigMoment: true
                 )
             } else {
-                let copy = AppConstants.RoastCopy.checkinFirstUseNormalBundle()
+                let fallback = AppConstants.RoastCopy.checkinFirstUseNormalBundle()
+                let copy = AppConstants.RoastCopy.checkinBundle(
+                    scene: "first_use_normal",
+                    fallback: fallback,
+                    itemName: itemName,
+                    itemID: item.id,
+                    primaryCategory: primaryCategory,
+                    secondaryCategory: secondaryCategory,
+                    behaviorTags: behaviorTags
+                )
+                let roastFallback = AppConstants.RoastCopy.checkinCelebrationRoastLine(
+                    usageCount: currentUsageCount,
+                    isBigMoment: false
+                )
                 return CheckinCelebrationPayload(
                     title: copy.title,
                     subtitle: copy.subtitle,
                     badge: copy.badge,
                     roastLine: AppConstants.RoastCopy.checkinCelebrationRoastLine(
-                        usageCount: currentUsageCount,
-                        isBigMoment: false
+                        scene: checkinRoastScene(
+                            usageCount: currentUsageCount,
+                            isBigMoment: false
+                        ),
+                        fallback: roastFallback,
+                        itemName: itemName,
+                        itemID: item.id,
+                        primaryCategory: primaryCategory,
+                        secondaryCategory: secondaryCategory,
+                        behaviorTags: behaviorTags
                     ),
                     isBigMoment: false
                 )
@@ -348,50 +417,138 @@ final class ExtractorViewModel {
 
         let idle = previousIdleDays ?? 0
         if idle >= 30 {
-            let copy = AppConstants.RoastCopy.checkinRevivalHeavyBundle(idleDays: idle)
+            let fallback = AppConstants.RoastCopy.checkinRevivalHeavyBundle(idleDays: idle)
+            let copy = AppConstants.RoastCopy.checkinBundle(
+                scene: "revival_heavy",
+                fallback: fallback,
+                itemName: itemName,
+                itemID: item.id,
+                primaryCategory: primaryCategory,
+                secondaryCategory: secondaryCategory,
+                behaviorTags: behaviorTags,
+                variables: ["idleDays": "\(idle)"]
+            )
+            let roastFallback = AppConstants.RoastCopy.checkinCelebrationRoastLine(
+                usageCount: currentUsageCount,
+                isBigMoment: true
+            )
             return CheckinCelebrationPayload(
                 title: copy.title,
                 subtitle: copy.subtitle,
                 badge: copy.badge,
                 roastLine: AppConstants.RoastCopy.checkinCelebrationRoastLine(
-                    usageCount: currentUsageCount,
-                    isBigMoment: true
+                    scene: checkinRoastScene(
+                        usageCount: currentUsageCount,
+                        isBigMoment: true
+                    ),
+                    fallback: roastFallback,
+                    itemName: itemName,
+                    itemID: item.id,
+                    primaryCategory: primaryCategory,
+                    secondaryCategory: secondaryCategory,
+                    behaviorTags: behaviorTags,
+                    variables: ["idleDays": "\(idle)"]
                 ),
                 isBigMoment: true
             )
         } else if idle >= 14 {
-            let copy = AppConstants.RoastCopy.checkinRevivalMidBundle(idleDays: idle)
+            let fallback = AppConstants.RoastCopy.checkinRevivalMidBundle(idleDays: idle)
+            let copy = AppConstants.RoastCopy.checkinBundle(
+                scene: "revival_mid",
+                fallback: fallback,
+                itemName: itemName,
+                itemID: item.id,
+                primaryCategory: primaryCategory,
+                secondaryCategory: secondaryCategory,
+                behaviorTags: behaviorTags,
+                variables: ["idleDays": "\(idle)"]
+            )
+            let roastFallback = AppConstants.RoastCopy.checkinCelebrationRoastLine(
+                usageCount: currentUsageCount,
+                isBigMoment: true
+            )
             return CheckinCelebrationPayload(
                 title: copy.title,
                 subtitle: copy.subtitle,
                 badge: copy.badge,
                 roastLine: AppConstants.RoastCopy.checkinCelebrationRoastLine(
-                    usageCount: currentUsageCount,
-                    isBigMoment: true
+                    scene: checkinRoastScene(
+                        usageCount: currentUsageCount,
+                        isBigMoment: true
+                    ),
+                    fallback: roastFallback,
+                    itemName: itemName,
+                    itemID: item.id,
+                    primaryCategory: primaryCategory,
+                    secondaryCategory: secondaryCategory,
+                    behaviorTags: behaviorTags,
+                    variables: ["idleDays": "\(idle)"]
                 ),
                 isBigMoment: true
             )
-        } else if idle <= 1 {
-            let copy = AppConstants.RoastCopy.checkinSteadyBundle()
+        } else if currentUsageCount >= 10 {
+            let fallback = AppConstants.RoastCopy.checkinSteadyBundle()
+            let copy = AppConstants.RoastCopy.checkinBundle(
+                scene: "steady_high_usage",
+                fallback: fallback,
+                itemName: itemName,
+                itemID: item.id,
+                primaryCategory: primaryCategory,
+                secondaryCategory: secondaryCategory,
+                behaviorTags: behaviorTags
+            )
+            let roastFallback = AppConstants.RoastCopy.checkinCelebrationRoastLine(
+                usageCount: currentUsageCount,
+                isBigMoment: false
+            )
             return CheckinCelebrationPayload(
                 title: copy.title,
                 subtitle: copy.subtitle,
                 badge: copy.badge,
                 roastLine: AppConstants.RoastCopy.checkinCelebrationRoastLine(
-                    usageCount: currentUsageCount,
-                    isBigMoment: false
+                    scene: checkinRoastScene(
+                        usageCount: currentUsageCount,
+                        isBigMoment: false
+                    ),
+                    fallback: roastFallback,
+                    itemName: itemName,
+                    itemID: item.id,
+                    primaryCategory: primaryCategory,
+                    secondaryCategory: secondaryCategory,
+                    behaviorTags: behaviorTags
                 ),
                 isBigMoment: false
             )
         } else {
-            let copy = AppConstants.RoastCopy.checkinNormalBundle()
+            let fallback = AppConstants.RoastCopy.checkinNormalBundle()
+            let copy = AppConstants.RoastCopy.checkinBundle(
+                scene: "checkin_default",
+                fallback: fallback,
+                itemName: itemName,
+                itemID: item.id,
+                primaryCategory: primaryCategory,
+                secondaryCategory: secondaryCategory,
+                behaviorTags: behaviorTags
+            )
+            let roastFallback = AppConstants.RoastCopy.checkinCelebrationRoastLine(
+                usageCount: currentUsageCount,
+                isBigMoment: false
+            )
             return CheckinCelebrationPayload(
                 title: copy.title,
                 subtitle: copy.subtitle,
                 badge: copy.badge,
                 roastLine: AppConstants.RoastCopy.checkinCelebrationRoastLine(
-                    usageCount: currentUsageCount,
-                    isBigMoment: false
+                    scene: checkinRoastScene(
+                        usageCount: currentUsageCount,
+                        isBigMoment: false
+                    ),
+                    fallback: roastFallback,
+                    itemName: itemName,
+                    itemID: item.id,
+                    primaryCategory: primaryCategory,
+                    secondaryCategory: secondaryCategory,
+                    behaviorTags: behaviorTags
                 ),
                 isBigMoment: false
             )
@@ -403,6 +560,24 @@ final class ExtractorViewModel {
         guard let note else { return nil }
         let trimmed = note.trimmingCharacters(in: .whitespacesAndNewlines)
         return trimmed.isEmpty ? nil : trimmed
+    }
+
+    /// 将打卡仪式页的 roast 槽位场景独立出来，避免直接复用 title/subtitle/badge 的业务场景。
+    /// - Parameters:
+    ///   - usageCount: `Int`，打卡后的累计使用次数。
+    ///   - isBigMoment: `Bool`，当前是否属于强事件节点（如重度回坑）。
+    /// - Returns: `String`，供 roast 槽位命中的专用 scene 标识。
+    private func checkinRoastScene(usageCount: Int, isBigMoment: Bool) -> String {
+        if usageCount == 1 {
+            return "first_use"
+        }
+        if isBigMoment {
+            return "big_moment"
+        }
+        if usageCount >= 30 {
+            return "high_usage"
+        }
+        return "default"
     }
 
     /// 计算“购买到首次使用”的间隔天数（按自然日）。
