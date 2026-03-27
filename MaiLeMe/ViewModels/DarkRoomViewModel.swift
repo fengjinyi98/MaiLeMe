@@ -14,6 +14,28 @@ enum DarkRoomDecisionOutcome {
     case purchased
 }
 
+/// 新增待购条目时的品类选择来源：要么使用自动识别结果，要么使用用户在表单中手动指定的结果。
+enum CategorySelection {
+    /// 使用自动识别出的一级/二级品类与置信度。
+    case auto(primary: ItemPrimaryCategory, secondary: ItemSecondaryCategory, confidence: CopyConfidence)
+    /// 使用用户手动指定的品类组合；若二级品类为 `.other`，则保留用户选择的一级品类。
+    case manual(primary: ItemPrimaryCategory, secondary: ItemSecondaryCategory)
+}
+
+/// 新增待购条目的请求对象：收敛表单输入，避免调用链长期依赖多个位置参数。
+struct CreateWishItemRequest {
+    /// 物品名称。
+    let name: String
+    /// 想买价格（分）。
+    let wishPriceCents: Int
+    /// 冷静期天数。
+    let cooldownDays: Int
+    /// 封面图数据，可为空。
+    let coverImageData: Data?
+    /// 本次提交最终采用的品类选择。
+    let categorySelection: CategorySelection
+}
+
 /// 决策仪式弹层风格。
 enum DarkRoomCelebrationTone {
     case saved
@@ -84,6 +106,7 @@ final class DarkRoomViewModel {
         wishPriceCents: Int,
         cooldownDays: Int,
         coverImageData: Data? = nil,
+        categorySelection: CategorySelection? = nil,
         context: ModelContext
     ) throws -> Item {
         let normalizedName = name.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -99,17 +122,84 @@ final class DarkRoomViewModel {
 
         let now = nowProvider()
         let cooldownEndAt = calendar.date(byAdding: .day, value: cooldownDays, to: now)
+        let resolvedCategoryMetadata = resolvedCategoryMetadata(
+            for: normalizedName,
+            categorySelection: categorySelection
+        )
+        let inferredBehaviorTags = BehaviorTagInferer().infer(
+            name: normalizedName,
+            primaryCategory: resolvedCategoryMetadata.primary,
+            secondaryCategory: resolvedCategoryMetadata.secondary
+        )
         let item = Item(
             name: normalizedName,
             createdAt: now,
             status: .wish,
             coverImageData: coverImageData,
             wishPriceCents: wishPriceCents,
+            primaryCategoryRawValue: resolvedCategoryMetadata.primary.rawValue,
+            secondaryCategoryRawValue: resolvedCategoryMetadata.secondary.rawValue,
+            categorySourceRawValue: resolvedCategoryMetadata.source.rawValue,
+            categoryConfidenceRawValue: resolvedCategoryMetadata.confidence.rawValue,
+            behaviorTagsRawValue: inferredBehaviorTags.map(\.rawValue),
+            behaviorTagSourceRawValue: CopyTagSource.inferred.rawValue,
             cooldownDays: cooldownDays,
             cooldownEndAt: cooldownEndAt
         )
         context.insert(item)
         return item
+    }
+
+    /// 使用请求对象创建待购物品，供 UI 提交流程调用，减少多层位置参数传递。
+    /// - Parameters:
+    ///   - request: `CreateWishItemRequest`，新增页表单收敛后的提交数据。
+    ///   - context: `ModelContext`，用于落库的模型上下文。
+    /// - Returns: `Item`，新创建的待购条目。
+    @discardableResult
+    func createWishItem(
+        _ request: CreateWishItemRequest,
+        context: ModelContext
+    ) throws -> Item {
+        try createWishItem(
+            name: request.name,
+            wishPriceCents: request.wishPriceCents,
+            cooldownDays: request.cooldownDays,
+            coverImageData: request.coverImageData,
+            categorySelection: request.categorySelection,
+            context: context
+        )
+    }
+
+    /// 解析新增页传入的品类选择，统一收敛为可落库的分类元数据。
+    /// - Parameters:
+    ///   - name: `String`，已清洗的条目名称；当调用方未显式传入选择时，会基于它做一次兜底自动识别。
+    ///   - categorySelection: `CategorySelection?`，新增页提交时携带的品类来源。
+    /// - Returns: `(primary, secondary, source, confidence)`，用于初始化 `Item` 的完整分类字段。
+    private func resolvedCategoryMetadata(
+        for name: String,
+        categorySelection: CategorySelection?
+    ) -> (
+        primary: ItemPrimaryCategory,
+        secondary: ItemSecondaryCategory,
+        source: CopyCategorySource,
+        confidence: CopyConfidence
+    ) {
+        let selection = categorySelection ?? {
+            let resolution = ItemCategoryClassifier().classify(name: name)
+            return CategorySelection.auto(
+                primary: resolution.primary,
+                secondary: resolution.secondary,
+                confidence: resolution.confidence
+            )
+        }()
+
+        switch selection {
+        case let .auto(primary, secondary, confidence):
+            let source: CopyCategorySource = secondary == .other ? .fallbackOther : .autoDetected
+            return (primary, secondary, source, confidence)
+        case let .manual(primary, secondary):
+            return (primary, secondary, .userSelected, .high)
+        }
     }
 
     /// 计算剩余冷静天数（按自然日）。

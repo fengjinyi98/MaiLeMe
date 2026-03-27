@@ -251,13 +251,8 @@ struct DarkRoomScreen: View {
                 }
             }
             .sheet(isPresented: $isPresentingAddSheet) {
-                AddItemScreen { name, wishPriceCents, cooldownDays, coverImageData in
-                    createItem(
-                        name: name,
-                        wishPriceCents: wishPriceCents,
-                        cooldownDays: cooldownDays,
-                        coverImageData: coverImageData
-                    )
+                AddItemScreen { request in
+                    createItem(request)
                 }
             }
             .confirmationDialog("确认删除该条目？", isPresented: showDeleteConfirmBinding) {
@@ -675,20 +670,9 @@ struct DarkRoomScreen: View {
     }
 
     /// 创建待购物品。
-    private func createItem(
-        name: String,
-        wishPriceCents: Int,
-        cooldownDays: Int,
-        coverImageData: Data?
-    ) {
+    private func createItem(_ request: CreateWishItemRequest) {
         do {
-            let item = try viewModel.createWishItem(
-                name: name,
-                wishPriceCents: wishPriceCents,
-                cooldownDays: cooldownDays,
-                coverImageData: coverImageData,
-                context: modelContext
-            )
+            let item = try viewModel.createWishItem(request, context: modelContext)
             Task {
                 await NotificationManager.shared.scheduleCooldownDecisionReminders(for: item)
             }

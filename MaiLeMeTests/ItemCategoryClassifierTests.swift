@@ -19,6 +19,13 @@ final class ItemCategoryClassifierTests: XCTestCase {
         return try ModelContainer(for: schema, configurations: [configuration])
     }
 
+    /// 创建仅驻留内存的 `ModelContext`，用于需要直接调用 ViewModel 写入逻辑的测试场景。
+    /// - Returns: 指向内存容器的 `ModelContext`。
+    /// - Throws: 当底层内存容器初始化失败时抛出 SwiftData 错误。
+    private func makeInMemoryModelContext() throws -> ModelContext {
+        ModelContext(try makeInMemoryContainer())
+    }
+
     /// 基础 taxonomy 应维护稳定的一二级品类归属与默认行为标签关系。
     func test_taxonomy_relationships_and_digital_default_tags_remain_consistent() {
         XCTAssertEqual(ItemSecondaryCategory.ssd.primaryCategory, .digital)
@@ -192,6 +199,75 @@ final class ItemCategoryClassifierTests: XCTestCase {
         XCTAssertEqual(resolution.primary, .other)
         XCTAssertEqual(resolution.secondary, .other)
         XCTAssertEqual(resolution.confidence, .low)
+    }
+
+    /// 当用户在新增页手动指定品类时，创建出的待购条目应优先使用手选结果，而不是重新覆盖成自动识别结果。
+    @MainActor
+    func test_create_wish_item_uses_user_selected_category_when_present() throws {
+        let viewModel = DarkRoomViewModel()
+        let context = try makeInMemoryModelContext()
+
+        let item = try viewModel.createWishItem(
+            name: "Apple Mac mini M4",
+            wishPriceCents: 399999,
+            cooldownDays: 7,
+            coverImageData: nil,
+            categorySelection: .manual(primary: .office, secondary: .desktopComputer),
+            context: context
+        )
+
+        XCTAssertEqual(item.primaryCategory, .office)
+        XCTAssertEqual(item.secondaryCategory, .desktopComputer)
+        XCTAssertEqual(item.categorySourceRawValue, CopyCategorySource.userSelected.rawValue)
+    }
+
+
+    /// 手动兜底开启后，自动识别结果仍应继续随名称变化刷新，方便用户后续恢复自动时拿到最新分类。
+    func test_add_item_category_state_refreshes_detected_result_without_overwriting_manual_override() {
+        var state = AddItemCategoryState(
+            detectedPrimaryCategory: .other,
+            detectedSecondaryCategory: .other,
+            detectedConfidence: .low,
+            hasManualCategoryOverride: true,
+            manualPrimaryCategory: .beauty,
+            manualSecondaryCategory: .lipstick
+        )
+
+        state.refreshDetectedCategory(for: "Apple Mac mini M4")
+
+        XCTAssertEqual(state.detectedPrimaryCategory, .office)
+        XCTAssertEqual(state.detectedSecondaryCategory, .desktopComputer)
+        XCTAssertEqual(state.detectedConfidence, .high)
+        XCTAssertTrue(state.hasManualCategoryOverride)
+        XCTAssertEqual(state.manualPrimaryCategory, .beauty)
+        XCTAssertEqual(state.manualSecondaryCategory, .lipstick)
+    }
+
+    /// 保存前应基于当前名称同步收敛一次自动分类，避免去抖任务尚未落地时写入旧的分类结果。
+    func test_add_item_category_state_resolves_latest_auto_category_on_submit_even_when_detected_state_is_stale() {
+        var state = AddItemCategoryState(
+            detectedPrimaryCategory: .other,
+            detectedSecondaryCategory: .other,
+            detectedConfidence: .low,
+            hasManualCategoryOverride: false,
+            manualPrimaryCategory: .beauty,
+            manualSecondaryCategory: .lipstick
+        )
+
+        let selection = state.resolveSelectionForSubmit(currentName: "Apple Mac mini M4")
+
+        switch selection {
+        case let .auto(primary, secondary, confidence):
+            XCTAssertEqual(primary, .office)
+            XCTAssertEqual(secondary, .desktopComputer)
+            XCTAssertEqual(confidence, .high)
+        case .manual:
+            XCTFail("未开启手动兜底时，保存应返回自动识别结果。")
+        }
+
+        XCTAssertEqual(state.detectedPrimaryCategory, .office)
+        XCTAssertEqual(state.detectedSecondaryCategory, .desktopComputer)
+        XCTAssertEqual(state.detectedConfidence, .high)
     }
 
     /// 单独出现“主机”并不足以证明是台式电脑；像空调主机这类条目应保持兜底分类。
