@@ -164,4 +164,19 @@ final class ItemCategoryClassifierTests: XCTestCase {
         explicitPrimaryItem.primaryCategory = .beauty
         XCTAssertEqual(explicitPrimaryItem.primaryCategory, .appliance)
     }
+
+    /// 分类器应能根据真实商品名识别出固态硬盘与 Mac mini 这类高置信度条目。
+    func test_classifier_identifies_ssd_and_mac_mini() {
+        let classifier = ItemCategoryClassifier()
+
+        let ssdResolution = classifier.classify(name: "三星 PM9A1 512G 固态硬盘")
+        XCTAssertEqual(ssdResolution.primary, .digital)
+        XCTAssertEqual(ssdResolution.secondary, .ssd)
+        XCTAssertEqual(ssdResolution.confidence, .high)
+
+        let desktopResolution = classifier.classify(name: "Apple Mac mini M4")
+        XCTAssertEqual(desktopResolution.primary, .office)
+        XCTAssertEqual(desktopResolution.secondary, .desktopComputer)
+        XCTAssertEqual(desktopResolution.confidence, .high)
+    }
 }
