@@ -1,0 +1,128 @@
+[
+  {
+    "id": "saved_review_title_low_001",
+    "module": "savedReview",
+    "slot": "title",
+    "scene": [
+      "headline_low"
+    ],
+    "tone": "warm",
+    "intensity": "low",
+    "stability": "semiStable",
+    "template": "手刹及时拉住，冲动消费当场熄火。",
+    "variables": [],
+    "categoryInclude": [],
+    "categoryExclude": [],
+    "behaviorInclude": [],
+    "behaviorExclude": [],
+    "weight": 100
+  },
+  {
+    "id": "saved_review_title_mid_001",
+    "module": "savedReview",
+    "slot": "title",
+    "scene": [
+      "headline_mid"
+    ],
+    "tone": "warm",
+    "intensity": "medium",
+    "stability": "semiStable",
+    "template": "你把剁手预算，硬生生扳成了存款。",
+    "variables": [],
+    "categoryInclude": [],
+    "categoryExclude": [],
+    "behaviorInclude": [],
+    "behaviorExclude": [],
+    "weight": 100
+  },
+  {
+    "id": "saved_review_title_high_001",
+    "module": "savedReview",
+    "slot": "title",
+    "scene": [
+      "headline_high"
+    ],
+    "tone": "sharp",
+    "intensity": "high",
+    "stability": "semiStable",
+    "template": "这波不是省钱，是把未来的焦虑提前清仓。",
+    "variables": [],
+    "categoryInclude": [],
+    "categoryExclude": [],
+    "behaviorInclude": [],
+    "behaviorExclude": [],
+    "weight": 100
+  },
+  {
+    "id": "saved_review_title_huge_001",
+    "module": "savedReview",
+    "slot": "title",
+    "scene": [
+      "headline_huge"
+    ],
+    "tone": "sharp",
+    "intensity": "high",
+    "stability": "semiStable",
+    "template": "一念之间省下大件，你的理性配得上热搜。",
+    "variables": [],
+    "categoryInclude": [],
+    "categoryExclude": [],
+    "behaviorInclude": [],
+    "behaviorExclude": [],
+    "weight": 100
+  },
+  {
+    "id": "saved_review_body_short_001",
+    "module": "savedReview",
+    "slot": "body",
+    "scene": [
+      "body_short_cooldown"
+    ],
+    "tone": "warm",
+    "intensity": "low",
+    "stability": "semiStable",
+    "template": "短冷静期也能守住底线，说明你是真想变有钱。",
+    "variables": [],
+    "categoryInclude": [],
+    "categoryExclude": [],
+    "behaviorInclude": [],
+    "behaviorExclude": [],
+    "weight": 100
+  },
+  {
+    "id": "saved_review_body_mid_001",
+    "module": "savedReview",
+    "slot": "body",
+    "scene": [
+      "body_mid_cooldown"
+    ],
+    "tone": "warm",
+    "intensity": "medium",
+    "stability": "semiStable",
+    "template": "挺过一周冲动窗口，你的钱包终于学会拒绝。",
+    "variables": [],
+    "categoryInclude": [],
+    "categoryExclude": [],
+    "behaviorInclude": [],
+    "behaviorExclude": [],
+    "weight": 100
+  },
+  {
+    "id": "saved_review_body_long_001",
+    "module": "savedReview",
+    "slot": "body",
+    "scene": [
+      "body_long_cooldown"
+    ],
+    "tone": "warm",
+    "intensity": "medium",
+    "stability": "semiStable",
+    "template": "冷静期拉满还忍住了，这不是拖延，这是成熟。",
+    "variables": [],
+    "categoryInclude": [],
+    "categoryExclude": [],
+    "behaviorInclude": [],
+    "behaviorExclude": [],
+    "weight": 100
+  }
+]

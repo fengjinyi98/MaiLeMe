@@ -1,0 +1,38 @@
+[
+  {
+    "id": "empty_state_dark_room_001",
+    "module": "emptyState",
+    "slot": "body",
+    "scene": [
+      "dark_room_empty"
+    ],
+    "tone": "warm",
+    "intensity": "low",
+    "stability": "rotating",
+    "template": "小黑屋现在是空的，说明你今天还挺稳。",
+    "variables": [],
+    "categoryInclude": [],
+    "categoryExclude": [],
+    "behaviorInclude": [],
+    "behaviorExclude": [],
+    "weight": 100
+  },
+  {
+    "id": "empty_state_extractor_001",
+    "module": "emptyState",
+    "slot": "body",
+    "scene": [
+      "extractor_empty"
+    ],
+    "tone": "warm",
+    "intensity": "low",
+    "stability": "rotating",
+    "template": "榨干机还没开张，先把想买清单里的条目做完决策。",
+    "variables": [],
+    "categoryInclude": [],
+    "categoryExclude": [],
+    "behaviorInclude": [],
+    "behaviorExclude": [],
+    "weight": 100
+  }
+]

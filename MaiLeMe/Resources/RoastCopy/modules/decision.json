@@ -1,0 +1,151 @@
+[
+  {
+    "id": "decision_saved_title_001",
+    "module": "decision",
+    "slot": "title",
+    "scene": [
+      "decision_saved"
+    ],
+    "tone": "warm",
+    "intensity": "medium",
+    "stability": "rotating",
+    "template": "理性胜利，冲动当场下线",
+    "variables": [],
+    "categoryInclude": [],
+    "categoryExclude": [],
+    "behaviorInclude": [],
+    "behaviorExclude": [],
+    "weight": 100
+  },
+  {
+    "id": "decision_saved_subtitle_001",
+    "module": "decision",
+    "slot": "subtitle",
+    "scene": [
+      "decision_saved"
+    ],
+    "tone": "warm",
+    "intensity": "medium",
+    "stability": "rotating",
+    "template": "你把“想买”变成了“省下”，这波自控力可以发朋友圈。",
+    "variables": [],
+    "categoryInclude": [],
+    "categoryExclude": [],
+    "behaviorInclude": [],
+    "behaviorExclude": [],
+    "weight": 100
+  },
+  {
+    "id": "decision_saved_action_001",
+    "module": "decision",
+    "slot": "actionTitle",
+    "scene": [
+      "decision_saved"
+    ],
+    "tone": "neutral",
+    "intensity": "low",
+    "stability": "stable",
+    "template": "继续克制",
+    "variables": [],
+    "categoryInclude": [],
+    "categoryExclude": [],
+    "behaviorInclude": [],
+    "behaviorExclude": [],
+    "weight": 100
+  },
+  {
+    "id": "decision_saved_roast_001",
+    "module": "decision",
+    "slot": "roast",
+    "scene": [
+      "decision_saved"
+    ],
+    "tone": "dry",
+    "intensity": "medium",
+    "stability": "rotating",
+    "template": "你的理性刚刚全票通过，冲动消费被请出群聊。",
+    "variables": [],
+    "categoryInclude": [],
+    "categoryExclude": [],
+    "behaviorInclude": [],
+    "behaviorExclude": [],
+    "weight": 100
+  },
+  {
+    "id": "decision_purchased_title_001",
+    "module": "decision",
+    "slot": "title",
+    "scene": [
+      "decision_purchased"
+    ],
+    "tone": "neutral",
+    "intensity": "medium",
+    "stability": "rotating",
+    "template": "决策已落地，接下来拼回本",
+    "variables": [],
+    "categoryInclude": [],
+    "categoryExclude": [],
+    "behaviorInclude": [],
+    "behaviorExclude": [],
+    "weight": 100
+  },
+  {
+    "id": "decision_purchased_subtitle_001",
+    "module": "decision",
+    "slot": "subtitle",
+    "scene": [
+      "decision_purchased"
+    ],
+    "tone": "dry",
+    "intensity": "medium",
+    "stability": "rotating",
+    "template": "既然买了就狠狠干活，别让它有机会继续吃灰。",
+    "variables": [],
+    "categoryInclude": [
+      "digital",
+      "office"
+    ],
+    "categoryExclude": [],
+    "behaviorInclude": [
+      "efficiencyFantasy"
+    ],
+    "behaviorExclude": [],
+    "weight": 100
+  },
+  {
+    "id": "decision_purchased_action_001",
+    "module": "decision",
+    "slot": "actionTitle",
+    "scene": [
+      "decision_purchased"
+    ],
+    "tone": "neutral",
+    "intensity": "medium",
+    "stability": "stable",
+    "template": "去榨干机打卡",
+    "variables": [],
+    "categoryInclude": [],
+    "categoryExclude": [],
+    "behaviorInclude": [],
+    "behaviorExclude": [],
+    "weight": 100
+  },
+  {
+    "id": "decision_purchased_roast_001",
+    "module": "decision",
+    "slot": "roast",
+    "scene": [
+      "decision_purchased"
+    ],
+    "tone": "sharp",
+    "intensity": "medium",
+    "stability": "rotating",
+    "template": "既然买了就狠狠干活，下次见面只接受“已回本”。",
+    "variables": [],
+    "categoryInclude": [],
+    "categoryExclude": [],
+    "behaviorInclude": [],
+    "behaviorExclude": [],
+    "weight": 100
+  }
+]

@@ -1,0 +1,111 @@
+[
+  {
+    "id": "notification_light_body_001",
+    "module": "notification",
+    "slot": "body",
+    "scene": [
+      "light_reminder"
+    ],
+    "tone": "dry",
+    "intensity": "low",
+    "stability": "rotating",
+    "template": "你的 {{itemName}} 已经 {{idleDays}} 天没碰了，今晚打个卡不过分吧？",
+    "variables": [
+      "itemName",
+      "idleDays"
+    ],
+    "categoryInclude": [],
+    "categoryExclude": [],
+    "behaviorInclude": [],
+    "behaviorExclude": [],
+    "weight": 100
+  },
+  {
+    "id": "notification_strong_body_001",
+    "module": "notification",
+    "slot": "body",
+    "scene": [
+      "strong_reminder"
+    ],
+    "tone": "sharp",
+    "intensity": "high",
+    "stability": "rotating",
+    "template": "{{itemName}} 吃灰 {{idleDays}} 天：当初的“提升效率”计划还在吗？",
+    "variables": [
+      "itemName",
+      "idleDays"
+    ],
+    "categoryInclude": [
+      "digital",
+      "office"
+    ],
+    "categoryExclude": [],
+    "behaviorInclude": [
+      "efficiencyFantasy",
+      "upgradeReplace"
+    ],
+    "behaviorExclude": [],
+    "weight": 110
+  },
+  {
+    "id": "notification_cooldown_ready_body_001",
+    "module": "notification",
+    "slot": "body",
+    "scene": [
+      "cooldown_ready"
+    ],
+    "tone": "neutral",
+    "intensity": "medium",
+    "stability": "semiStable",
+    "template": "冷静期已结束：{{itemName}}，现在请用理性而不是手速做决定。",
+    "variables": [
+      "itemName"
+    ],
+    "categoryInclude": [],
+    "categoryExclude": [],
+    "behaviorInclude": [],
+    "behaviorExclude": [],
+    "weight": 100
+  },
+  {
+    "id": "notification_cooldown_followup_body_001",
+    "module": "notification",
+    "slot": "body",
+    "scene": [
+      "cooldown_followup"
+    ],
+    "tone": "dry",
+    "intensity": "medium",
+    "stability": "semiStable",
+    "template": "{{itemName}} 到期后你还没决策，是准备拖到下次冲动吗？",
+    "variables": [
+      "itemName"
+    ],
+    "categoryInclude": [],
+    "categoryExclude": [],
+    "behaviorInclude": [],
+    "behaviorExclude": [],
+    "weight": 100
+  },
+  {
+    "id": "notification_rescue_followup_body_001",
+    "module": "notification",
+    "slot": "body",
+    "scene": [
+      "rescue_followup"
+    ],
+    "tone": "sharp",
+    "intensity": "high",
+    "stability": "semiStable",
+    "template": "{{itemName}} 你说 {{idleDays}} 天后处理，今天该兑现了：要么打卡，要么上闲鱼。",
+    "variables": [
+      "itemName",
+      "idleDays"
+    ],
+    "categoryInclude": [],
+    "categoryExclude": [],
+    "behaviorInclude": [],
+    "behaviorExclude": [],
+    "weight": 100
+  }
+]

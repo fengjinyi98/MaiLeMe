@@ -1,0 +1,56 @@
+[
+  {
+    "id": "share_decision_saved_outcome_001",
+    "module": "share",
+    "slot": "body",
+    "scene": [
+      "decision_saved_outcome"
+    ],
+    "tone": "neutral",
+    "intensity": "low",
+    "stability": "stable",
+    "template": "冷静期成功忍住没买，直接省下一笔。",
+    "variables": [],
+    "categoryInclude": [],
+    "categoryExclude": [],
+    "behaviorInclude": [],
+    "behaviorExclude": [],
+    "weight": 100
+  },
+  {
+    "id": "share_decision_purchased_outcome_001",
+    "module": "share",
+    "slot": "body",
+    "scene": [
+      "decision_purchased_outcome"
+    ],
+    "tone": "neutral",
+    "intensity": "medium",
+    "stability": "stable",
+    "template": "冷静期结束后理性买入，已进入榨干机计划。",
+    "variables": [],
+    "categoryInclude": [],
+    "categoryExclude": [],
+    "behaviorInclude": [],
+    "behaviorExclude": [],
+    "weight": 100
+  },
+  {
+    "id": "share_checkin_closing_001",
+    "module": "share",
+    "slot": "body",
+    "scene": [
+      "checkin_share_closing"
+    ],
+    "tone": "warm",
+    "intensity": "low",
+    "stability": "semiStable",
+    "template": "你也来试试，别让买过的东西继续吃灰。",
+    "variables": [],
+    "categoryInclude": [],
+    "categoryExclude": [],
+    "behaviorInclude": [],
+    "behaviorExclude": [],
+    "weight": 100
+  }
+]

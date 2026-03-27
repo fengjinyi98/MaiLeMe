@@ -1,0 +1,461 @@
+[
+  {
+    "id": "checkin_first_use_immediate_title_001",
+    "module": "checkin",
+    "slot": "title",
+    "scene": [
+      "first_use_immediate"
+    ],
+    "tone": "warm",
+    "intensity": "low",
+    "stability": "rotating",
+    "template": "上手即开张，这波很会买",
+    "variables": [],
+    "categoryInclude": [
+      "digital",
+      "office"
+    ],
+    "categoryExclude": [],
+    "behaviorInclude": [],
+    "behaviorExclude": [],
+    "weight": 100
+  },
+  {
+    "id": "checkin_first_use_immediate_subtitle_001",
+    "module": "checkin",
+    "slot": "subtitle",
+    "scene": [
+      "first_use_immediate"
+    ],
+    "tone": "warm",
+    "intensity": "low",
+    "stability": "rotating",
+    "template": "买完马上用，钱包看了都想给你点赞。",
+    "variables": [],
+    "categoryInclude": [],
+    "categoryExclude": [],
+    "behaviorInclude": [],
+    "behaviorExclude": [],
+    "weight": 100
+  },
+  {
+    "id": "checkin_first_use_immediate_badge_001",
+    "module": "checkin",
+    "slot": "badge",
+    "scene": [
+      "first_use_immediate"
+    ],
+    "tone": "neutral",
+    "intensity": "low",
+    "stability": "stable",
+    "template": "首战即用",
+    "variables": [],
+    "categoryInclude": [],
+    "categoryExclude": [],
+    "behaviorInclude": [],
+    "behaviorExclude": [],
+    "weight": 100
+  },
+  {
+    "id": "checkin_first_use_late_title_001",
+    "module": "checkin",
+    "slot": "title",
+    "scene": [
+      "first_use_late"
+    ],
+    "tone": "warm",
+    "intensity": "medium",
+    "stability": "rotating",
+    "template": "吃灰一个月，终于被你救活",
+    "variables": [],
+    "categoryInclude": [],
+    "categoryExclude": [],
+    "behaviorInclude": [],
+    "behaviorExclude": [],
+    "weight": 100
+  },
+  {
+    "id": "checkin_first_use_late_subtitle_001",
+    "module": "checkin",
+    "slot": "subtitle",
+    "scene": [
+      "first_use_late"
+    ],
+    "tone": "warm",
+    "intensity": "medium",
+    "stability": "rotating",
+    "template": "拖了 {{daysToFirstUse}} 天才开封，但今天这下算是把面子挣回来了。",
+    "variables": [
+      "daysToFirstUse"
+    ],
+    "categoryInclude": [],
+    "categoryExclude": [],
+    "behaviorInclude": [],
+    "behaviorExclude": [],
+    "weight": 100
+  },
+  {
+    "id": "checkin_first_use_late_badge_001",
+    "module": "checkin",
+    "slot": "badge",
+    "scene": [
+      "first_use_late"
+    ],
+    "tone": "neutral",
+    "intensity": "low",
+    "stability": "stable",
+    "template": "迟到首刷",
+    "variables": [],
+    "categoryInclude": [],
+    "categoryExclude": [],
+    "behaviorInclude": [],
+    "behaviorExclude": [],
+    "weight": 100
+  },
+  {
+    "id": "checkin_first_use_normal_title_001",
+    "module": "checkin",
+    "slot": "title",
+    "scene": [
+      "first_use_normal"
+    ],
+    "tone": "neutral",
+    "intensity": "low",
+    "stability": "rotating",
+    "template": "首次打卡到账",
+    "variables": [],
+    "categoryInclude": [],
+    "categoryExclude": [],
+    "behaviorInclude": [],
+    "behaviorExclude": [],
+    "weight": 100
+  },
+  {
+    "id": "checkin_first_use_normal_subtitle_001",
+    "module": "checkin",
+    "slot": "subtitle",
+    "scene": [
+      "first_use_normal"
+    ],
+    "tone": "warm",
+    "intensity": "low",
+    "stability": "rotating",
+    "template": "比继续落灰强太多，今天这一用很争气。",
+    "variables": [],
+    "categoryInclude": [],
+    "categoryExclude": [],
+    "behaviorInclude": [],
+    "behaviorExclude": [],
+    "weight": 100
+  },
+  {
+    "id": "checkin_first_use_normal_badge_001",
+    "module": "checkin",
+    "slot": "badge",
+    "scene": [
+      "first_use_normal"
+    ],
+    "tone": "neutral",
+    "intensity": "low",
+    "stability": "stable",
+    "template": "首次开封",
+    "variables": [],
+    "categoryInclude": [],
+    "categoryExclude": [],
+    "behaviorInclude": [],
+    "behaviorExclude": [],
+    "weight": 100
+  },
+  {
+    "id": "checkin_revival_heavy_title_001",
+    "module": "checkin",
+    "slot": "title",
+    "scene": [
+      "revival_heavy"
+    ],
+    "tone": "warm",
+    "intensity": "medium",
+    "stability": "rotating",
+    "template": "重度吃灰逆转成功",
+    "variables": [],
+    "categoryInclude": [],
+    "categoryExclude": [],
+    "behaviorInclude": [],
+    "behaviorExclude": [],
+    "weight": 100
+  },
+  {
+    "id": "checkin_revival_heavy_subtitle_001",
+    "module": "checkin",
+    "slot": "subtitle",
+    "scene": [
+      "revival_heavy"
+    ],
+    "tone": "warm",
+    "intensity": "medium",
+    "stability": "rotating",
+    "template": "沉寂 {{idleDays}} 天后终于复活，资产没有白买。",
+    "variables": [
+      "idleDays"
+    ],
+    "categoryInclude": [],
+    "categoryExclude": [],
+    "behaviorInclude": [],
+    "behaviorExclude": [],
+    "weight": 100
+  },
+  {
+    "id": "checkin_revival_heavy_badge_001",
+    "module": "checkin",
+    "slot": "badge",
+    "scene": [
+      "revival_heavy"
+    ],
+    "tone": "neutral",
+    "intensity": "medium",
+    "stability": "stable",
+    "template": "回坑成功",
+    "variables": [],
+    "categoryInclude": [],
+    "categoryExclude": [],
+    "behaviorInclude": [],
+    "behaviorExclude": [],
+    "weight": 100
+  },
+  {
+    "id": "checkin_revival_mid_title_001",
+    "module": "checkin",
+    "slot": "title",
+    "scene": [
+      "revival_mid"
+    ],
+    "tone": "warm",
+    "intensity": "medium",
+    "stability": "rotating",
+    "template": "拖延症被你反杀",
+    "variables": [],
+    "categoryInclude": [],
+    "categoryExclude": [],
+    "behaviorInclude": [],
+    "behaviorExclude": [],
+    "weight": 100
+  },
+  {
+    "id": "checkin_revival_mid_subtitle_001",
+    "module": "checkin",
+    "slot": "subtitle",
+    "scene": [
+      "revival_mid"
+    ],
+    "tone": "warm",
+    "intensity": "medium",
+    "stability": "rotating",
+    "template": "停摆 {{idleDays}} 天后重启使用，这次继续连击别断。",
+    "variables": [
+      "idleDays"
+    ],
+    "categoryInclude": [],
+    "categoryExclude": [],
+    "behaviorInclude": [],
+    "behaviorExclude": [],
+    "weight": 100
+  },
+  {
+    "id": "checkin_revival_mid_badge_001",
+    "module": "checkin",
+    "slot": "badge",
+    "scene": [
+      "revival_mid"
+    ],
+    "tone": "neutral",
+    "intensity": "medium",
+    "stability": "stable",
+    "template": "复活连击",
+    "variables": [],
+    "categoryInclude": [],
+    "categoryExclude": [],
+    "behaviorInclude": [],
+    "behaviorExclude": [],
+    "weight": 100
+  },
+  {
+    "id": "checkin_steady_high_usage_title_001",
+    "module": "checkin",
+    "slot": "title",
+    "scene": [
+      "steady_high_usage"
+    ],
+    "tone": "warm",
+    "intensity": "low",
+    "stability": "rotating",
+    "template": "节奏在线，成本在掉",
+    "variables": [],
+    "categoryInclude": [],
+    "categoryExclude": [],
+    "behaviorInclude": [],
+    "behaviorExclude": [],
+    "weight": 100
+  },
+  {
+    "id": "checkin_steady_high_usage_subtitle_001",
+    "module": "checkin",
+    "slot": "subtitle",
+    "scene": [
+      "steady_high_usage"
+    ],
+    "tone": "warm",
+    "intensity": "low",
+    "stability": "rotating",
+    "template": "你在稳定输出，单次成本正在被你按着打。",
+    "variables": [],
+    "categoryInclude": [],
+    "categoryExclude": [],
+    "behaviorInclude": [],
+    "behaviorExclude": [],
+    "weight": 100
+  },
+  {
+    "id": "checkin_steady_high_usage_badge_001",
+    "module": "checkin",
+    "slot": "badge",
+    "scene": [
+      "steady_high_usage"
+    ],
+    "tone": "neutral",
+    "intensity": "low",
+    "stability": "stable",
+    "template": "稳定输出",
+    "variables": [],
+    "categoryInclude": [],
+    "categoryExclude": [],
+    "behaviorInclude": [],
+    "behaviorExclude": [],
+    "weight": 100
+  },
+  {
+    "id": "checkin_default_title_001",
+    "module": "checkin",
+    "slot": "title",
+    "scene": [
+      "checkin_default"
+    ],
+    "tone": "neutral",
+    "intensity": "low",
+    "stability": "rotating",
+    "template": "今日打卡，继续回血",
+    "variables": [],
+    "categoryInclude": [],
+    "categoryExclude": [],
+    "behaviorInclude": [],
+    "behaviorExclude": [],
+    "weight": 100
+  },
+  {
+    "id": "checkin_default_subtitle_001",
+    "module": "checkin",
+    "slot": "subtitle",
+    "scene": [
+      "checkin_default"
+    ],
+    "tone": "neutral",
+    "intensity": "low",
+    "stability": "rotating",
+    "template": "这波使用很关键，你又把冲动消费扳回一城。",
+    "variables": [],
+    "categoryInclude": [],
+    "categoryExclude": [],
+    "behaviorInclude": [],
+    "behaviorExclude": [],
+    "weight": 100
+  },
+  {
+    "id": "checkin_default_badge_001",
+    "module": "checkin",
+    "slot": "badge",
+    "scene": [
+      "checkin_default"
+    ],
+    "tone": "neutral",
+    "intensity": "low",
+    "stability": "stable",
+    "template": "今日 +1",
+    "variables": [],
+    "categoryInclude": [],
+    "categoryExclude": [],
+    "behaviorInclude": [],
+    "behaviorExclude": [],
+    "weight": 100
+  },
+  {
+    "id": "checkin_roast_first_use_001",
+    "module": "checkin",
+    "slot": "roast",
+    "scene": [
+      "first_use"
+    ],
+    "tone": "dry",
+    "intensity": "medium",
+    "stability": "rotating",
+    "template": "首刷到账，这件东西终于不是家里最贵摆件了。",
+    "variables": [],
+    "categoryInclude": [],
+    "categoryExclude": [],
+    "behaviorInclude": [],
+    "behaviorExclude": [],
+    "weight": 100
+  },
+  {
+    "id": "checkin_roast_big_moment_001",
+    "module": "checkin",
+    "slot": "roast",
+    "scene": [
+      "big_moment"
+    ],
+    "tone": "sharp",
+    "intensity": "medium",
+    "stability": "rotating",
+    "template": "你把吃灰库存救回来了，这波比捡钱还狠。",
+    "variables": [],
+    "categoryInclude": [],
+    "categoryExclude": [],
+    "behaviorInclude": [],
+    "behaviorExclude": [],
+    "weight": 100
+  },
+  {
+    "id": "checkin_roast_high_usage_001",
+    "module": "checkin",
+    "slot": "roast",
+    "scene": [
+      "high_usage"
+    ],
+    "tone": "dry",
+    "intensity": "medium",
+    "stability": "rotating",
+    "template": "打卡强度离谱，物品都怕你不给它下班。",
+    "variables": [],
+    "categoryInclude": [],
+    "categoryExclude": [],
+    "behaviorInclude": [],
+    "behaviorExclude": [],
+    "weight": 100
+  },
+  {
+    "id": "checkin_roast_default_001",
+    "module": "checkin",
+    "slot": "roast",
+    "scene": [
+      "default"
+    ],
+    "tone": "dry",
+    "intensity": "medium",
+    "stability": "rotating",
+    "template": "继续连击，别让它回到“买前刚需、买后装饰”的老路。",
+    "variables": [],
+    "categoryInclude": [],
+    "categoryExclude": [],
+    "behaviorInclude": [],
+    "behaviorExclude": [],
+    "weight": 100
+  }
+]

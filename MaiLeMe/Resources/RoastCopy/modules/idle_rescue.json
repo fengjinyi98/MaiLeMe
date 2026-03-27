@@ -1,0 +1,168 @@
+[
+  {
+    "id": "idle_rescue_primary_light_001",
+    "module": "idleRescue",
+    "slot": "primary",
+    "scene": [
+      "primary_light"
+    ],
+    "tone": "warm",
+    "intensity": "low",
+    "stability": "semiStable",
+    "template": "关系还没凉透，今晚用一次就能续命。",
+    "variables": [],
+    "categoryInclude": [],
+    "categoryExclude": [],
+    "behaviorInclude": [],
+    "behaviorExclude": [],
+    "weight": 100
+  },
+  {
+    "id": "idle_rescue_primary_warm_001",
+    "module": "idleRescue",
+    "slot": "primary",
+    "scene": [
+      "primary_warm"
+    ],
+    "tone": "warm",
+    "intensity": "low",
+    "stability": "semiStable",
+    "template": "你俩还不算陌生，赶紧打卡别让它转正成摆件。",
+    "variables": [],
+    "categoryInclude": [],
+    "categoryExclude": [],
+    "behaviorInclude": [],
+    "behaviorExclude": [],
+    "weight": 100
+  },
+  {
+    "id": "idle_rescue_primary_mid_001",
+    "module": "idleRescue",
+    "slot": "primary",
+    "scene": [
+      "primary_mid"
+    ],
+    "tone": "dry",
+    "intensity": "medium",
+    "stability": "semiStable",
+    "template": "它不是装饰品，你也不是样板间策展人。",
+    "variables": [],
+    "categoryInclude": [],
+    "categoryExclude": [],
+    "behaviorInclude": [],
+    "behaviorExclude": [],
+    "weight": 100
+  },
+  {
+    "id": "idle_rescue_primary_heavy_001",
+    "module": "idleRescue",
+    "slot": "primary",
+    "scene": [
+      "primary_heavy"
+    ],
+    "tone": "sharp",
+    "intensity": "high",
+    "stability": "semiStable",
+    "template": "吃灰一个月了，不放闲鱼是准备传家吗？",
+    "variables": [],
+    "categoryInclude": [
+      "digital",
+      "office",
+      "appliance"
+    ],
+    "categoryExclude": [],
+    "behaviorInclude": [],
+    "behaviorExclude": [],
+    "weight": 100
+  },
+  {
+    "id": "idle_rescue_primary_severe_001",
+    "module": "idleRescue",
+    "slot": "primary",
+    "scene": [
+      "primary_severe"
+    ],
+    "tone": "sharp",
+    "intensity": "high",
+    "stability": "semiStable",
+    "template": "这件物品目前唯一作用：提醒你当时下单很快。",
+    "variables": [],
+    "categoryInclude": [],
+    "categoryExclude": [],
+    "behaviorInclude": [],
+    "behaviorExclude": [],
+    "weight": 100
+  },
+  {
+    "id": "idle_rescue_primary_extreme_001",
+    "module": "idleRescue",
+    "slot": "primary",
+    "scene": [
+      "primary_extreme"
+    ],
+    "tone": "sharp",
+    "intensity": "high",
+    "stability": "semiStable",
+    "template": "吃灰超百天了，再不处置就只能当冲动消费纪念碑。",
+    "variables": [],
+    "categoryInclude": [],
+    "categoryExclude": [],
+    "behaviorInclude": [],
+    "behaviorExclude": [],
+    "weight": 100
+  },
+  {
+    "id": "idle_rescue_secondary_never_used_001",
+    "module": "idleRescue",
+    "slot": "secondary",
+    "scene": [
+      "secondary_never_used"
+    ],
+    "tone": "dry",
+    "intensity": "medium",
+    "stability": "semiStable",
+    "template": "买来从未开张，属于“理想中的自己在用，现实中的你在看”。",
+    "variables": [],
+    "categoryInclude": [],
+    "categoryExclude": [],
+    "behaviorInclude": [],
+    "behaviorExclude": [],
+    "weight": 100
+  },
+  {
+    "id": "idle_rescue_secondary_heavy_001",
+    "module": "idleRescue",
+    "slot": "secondary",
+    "scene": [
+      "secondary_heavy"
+    ],
+    "tone": "sharp",
+    "intensity": "high",
+    "stability": "semiStable",
+    "template": "给你两个选项：今晚打卡，或者今晚挂闲鱼。",
+    "variables": [],
+    "categoryInclude": [],
+    "categoryExclude": [],
+    "behaviorInclude": [],
+    "behaviorExclude": [],
+    "weight": 100
+  },
+  {
+    "id": "idle_rescue_secondary_default_001",
+    "module": "idleRescue",
+    "slot": "secondary",
+    "scene": [
+      "secondary_default"
+    ],
+    "tone": "dry",
+    "intensity": "medium",
+    "stability": "semiStable",
+    "template": "继续拖延只会让转手价继续打折。",
+    "variables": [],
+    "categoryInclude": [],
+    "categoryExclude": [],
+    "behaviorInclude": [],
+    "behaviorExclude": [],
+    "weight": 100
+  }
+]
