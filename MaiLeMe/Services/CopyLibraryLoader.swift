@@ -10,11 +10,15 @@ struct CopyLibrary: Equatable, Sendable {
 enum CopyLibraryLoaderError: LocalizedError, Equatable {
     /// 指定资源文件在 bundle 中不存在。
     case missingResource(name: String, bundlePath: String)
+    /// 指定资源文件解码失败，并携带底层错误描述，便于快速定位具体模块。
+    case decodingFailed(name: String, underlyingDescription: String)
 
     var errorDescription: String? {
         switch self {
         case let .missingResource(name, bundlePath):
             return "未在 bundle 中找到文案资源文件：\(name).json（bundle: \(bundlePath)）。"
+        case let .decodingFailed(name, underlyingDescription):
+            return "文案资源文件解码失败：\(name).json（原因：\(underlyingDescription)）。"
         }
     }
 }
@@ -25,16 +29,6 @@ final class CopyLibraryLoader {
     private let bundle: Bundle
     /// 资源子目录常量，集中维护避免路径散落。
     private let modulesSubdirectory = "RoastCopy/modules"
-    /// 当前阶段约定的模块文件名清单；保持与任务说明一致，避免遗漏某个模块文件。
-    private let moduleNames = [
-        "notifications",
-        "decision",
-        "checkin",
-        "idle_rescue",
-        "saved_review",
-        "empty_state",
-        "share"
-    ]
 
     /// 创建文案加载器。
     /// - Parameter bundle: 资源所在 bundle，默认使用主 bundle。
@@ -46,7 +40,9 @@ final class CopyLibraryLoader {
     /// - Returns: 已解码的结构化文案库。
     /// - Throws: 当任一模块文件缺失或 JSON 解码失败时抛出错误。
     func load() throws -> CopyLibrary {
-        let entries = try moduleNames.flatMap { try decodeFile(named: $0) }
+        let entries = try CopyModule.allCases.flatMap { module in
+            try decodeFile(named: module.resourceFileName)
+        }
         return CopyLibrary(entries: entries)
     }
 
@@ -73,6 +69,13 @@ final class CopyLibraryLoader {
         }
 
         let data = try Data(contentsOf: url)
-        return try JSONDecoder().decode([RoastCopyEntry].self, from: data)
+        do {
+            return try JSONDecoder().decode([RoastCopyEntry].self, from: data)
+        } catch {
+            throw CopyLibraryLoaderError.decodingFailed(
+                name: name,
+                underlyingDescription: error.localizedDescription
+            )
+        }
     }
 }

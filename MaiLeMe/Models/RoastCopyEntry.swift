@@ -16,6 +16,26 @@ enum CopyModule: String, Codable, CaseIterable, Sendable {
     case emptyState
     /// 分享文案片段。
     case share
+
+    /// 对应的资源文件名：保持模块枚举与磁盘 JSON 文件的一致真相源，避免 loader 再维护第二份硬编码清单。
+    var resourceFileName: String {
+        switch self {
+        case .notification:
+            return "notifications"
+        case .decision:
+            return "decision"
+        case .checkin:
+            return "checkin"
+        case .idleRescue:
+            return "idle_rescue"
+        case .savedReview:
+            return "saved_review"
+        case .emptyState:
+            return "empty_state"
+        case .share:
+            return "share"
+        }
+    }
 }
 
 /// 文案在一个模块中的承载位置：用于 resolver 按 UI 槽位精确选词。
