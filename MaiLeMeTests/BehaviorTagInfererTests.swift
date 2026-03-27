@@ -11,8 +11,13 @@ final class BehaviorTagInfererTests: XCTestCase {
             secondaryCategory: .desktopComputer
         )
 
-        XCTAssertTrue(tags.contains(.efficiencyFantasy))
-        XCTAssertTrue(tags.contains(.selfImprovement))
-        XCTAssertTrue(tags.contains(.upgradeReplace))
+        XCTAssertEqual(
+            Set(tags),
+            Set<ItemBehaviorTag>([
+                .efficiencyFantasy,
+                .selfImprovement,
+                .upgradeReplace
+            ])
+        )
     }
 }

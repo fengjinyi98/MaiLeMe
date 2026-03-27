@@ -178,5 +178,28 @@ final class ItemCategoryClassifierTests: XCTestCase {
         XCTAssertEqual(desktopResolution.primary, .office)
         XCTAssertEqual(desktopResolution.secondary, .desktopComputer)
         XCTAssertEqual(desktopResolution.confidence, .high)
+
+        let towerResolution = classifier.classify(name: "联想 天逸 台式主机")
+        XCTAssertEqual(towerResolution.primary, .office)
+        XCTAssertEqual(towerResolution.secondary, .desktopComputer)
+        XCTAssertEqual(towerResolution.confidence, .high)
+    }
+
+    /// 分类器对未知商品名应保守回退，避免在证据不足时强行给出高置信度分类。
+    func test_classifier_falls_back_to_other_for_unknown_item_name() {
+        let resolution = ItemCategoryClassifier().classify(name: "限定周边神秘礼盒")
+
+        XCTAssertEqual(resolution.primary, .other)
+        XCTAssertEqual(resolution.secondary, .other)
+        XCTAssertEqual(resolution.confidence, .low)
+    }
+
+    /// 单独出现“主机”并不足以证明是台式电脑；像空调主机这类条目应保持兜底分类。
+    func test_classifier_does_not_treat_ambiguous_host_keyword_as_desktop_computer() {
+        let resolution = ItemCategoryClassifier().classify(name: "格力空调主机")
+
+        XCTAssertEqual(resolution.primary, .other)
+        XCTAssertEqual(resolution.secondary, .other)
+        XCTAssertEqual(resolution.confidence, .low)
     }
 }

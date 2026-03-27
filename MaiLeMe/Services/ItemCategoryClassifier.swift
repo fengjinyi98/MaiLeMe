@@ -15,7 +15,7 @@ struct ItemCategoryClassifier {
     /// 根据商品名称推断条目品类。
     /// - Parameter name: `String`，用户输入或外部同步得到的商品名称。
     /// - Returns: `ItemCategoryResolution`，包含一级品类、二级品类与命中置信度。
-    /// - Note: 当前仅实现 Task 3 所需的最小规则，优先覆盖 SSD 与台式主机场景。
+    /// - Note: 当前仅实现 Task 3 所需的最小规则，优先覆盖 SSD 与台式主机场景，并尽量保持保守。
     func classify(name: String) -> ItemCategoryResolution {
         let normalizedName = name.lowercased()
 
@@ -26,9 +26,10 @@ struct ItemCategoryClassifier {
             return .init(primary: .digital, secondary: .ssd, confidence: .high)
         }
 
-        // Mac mini 或“主机”一类表达通常代表台式办公主机，适合归入办公设备。
+        // 台式办公主机需要更具体的词组命中，避免“空调主机 / 游戏主机”等宽泛表达被误判成电脑。
         if normalizedName.contains("mac mini")
-            || normalizedName.contains("主机") {
+            || normalizedName.contains("电脑主机")
+            || normalizedName.contains("台式主机") {
             return .init(primary: .office, secondary: .desktopComputer, confidence: .high)
         }
 
