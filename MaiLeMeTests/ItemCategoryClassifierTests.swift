@@ -14,4 +14,22 @@ final class ItemCategoryClassifierTests: XCTestCase {
         XCTAssertTrue(ItemBehaviorTag.efficiencyFantasy.isDefaultForDigital)
         XCTAssertFalse(ItemBehaviorTag.selfImprovement.isDefaultForDigital)
     }
+
+    /// 条目模型应能持久化分类元数据，并通过 typed wrapper 暴露业务语义。
+    func test_item_persists_primary_secondary_category_and_behavior_tags() {
+        let item = Item(
+            name: "Mac mini",
+            wishPriceCents: 399999,
+            primaryCategoryRawValue: ItemPrimaryCategory.office.rawValue,
+            secondaryCategoryRawValue: ItemSecondaryCategory.desktopComputer.rawValue,
+            behaviorTagsRawValue: [
+                ItemBehaviorTag.efficiencyFantasy.rawValue,
+                ItemBehaviorTag.selfImprovement.rawValue
+            ]
+        )
+
+        XCTAssertEqual(item.primaryCategory, .office)
+        XCTAssertEqual(item.secondaryCategory, .desktopComputer)
+        XCTAssertTrue(item.behaviorTags.contains(.efficiencyFantasy))
+    }
 }

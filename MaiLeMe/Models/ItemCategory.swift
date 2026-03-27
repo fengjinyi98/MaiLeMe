@@ -1,5 +1,33 @@
 import Foundation
 
+/// 品类来源：标识条目分类信息来自自动识别、用户手选还是兜底降级。
+enum CopyCategorySource: String, Codable, CaseIterable {
+    /// 由本地规则自动识别得到。
+    case autoDetected
+    /// 由用户手动选择确认。
+    case userSelected
+    /// 自动识别失败后回退到 other。
+    case fallbackOther
+}
+
+/// 行为标签来源：区分是系统推断还是用户调整后的结果。
+enum CopyTagSource: String, Codable, CaseIterable {
+    /// 根据分类或规则自动推断。
+    case inferred
+    /// 用户在 UI 上手动调整过。
+    case userAdjusted
+}
+
+/// 分类置信度：表示自动分类结果的可信程度，便于后续文案或 UI 提示复用。
+enum CopyConfidence: String, Codable, CaseIterable {
+    /// 高置信度，可直接用于较强提示。
+    case high
+    /// 中置信度，适合弱提示或待确认态。
+    case medium
+    /// 低置信度，通常需要保守兜底。
+    case low
+}
+
 /// 一级品类：用于文案系统和条目语义识别的大类分桶。
 enum ItemPrimaryCategory: String, Codable, CaseIterable {
     /// 数码设备与配件。

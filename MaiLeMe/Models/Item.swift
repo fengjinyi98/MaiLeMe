@@ -43,6 +43,18 @@ final class Item {
 
     /// 想买阶段价格，单位为“分”。
     var wishPriceCents: Int
+    /// 一级品类原始值，用于 SwiftData 持久化。
+    var primaryCategoryRawValue: String
+    /// 二级品类原始值，用于 SwiftData 持久化。
+    var secondaryCategoryRawValue: String
+    /// 品类来源原始值，用于记录分类是自动识别还是用户确认。
+    var categorySourceRawValue: String
+    /// 品类置信度原始值，用于记录分类可信程度。
+    var categoryConfidenceRawValue: String
+    /// 行为标签原始值集合，用于 SwiftData 持久化。
+    var behaviorTagsRawValue: [String]
+    /// 行为标签来源原始值，用于区分推断与用户调整。
+    var behaviorTagSourceRawValue: String
     /// 冷静期天数（仅小黑屋场景需要）。
     var cooldownDays: Int?
     /// 冷静期结束时间。
@@ -81,6 +93,12 @@ final class Item {
         status: ItemStatus = .wish,
         coverImageData: Data? = nil,
         wishPriceCents: Int,
+        primaryCategoryRawValue: String = ItemPrimaryCategory.other.rawValue,
+        secondaryCategoryRawValue: String = ItemSecondaryCategory.other.rawValue,
+        categorySourceRawValue: String = CopyCategorySource.autoDetected.rawValue,
+        categoryConfidenceRawValue: String = CopyConfidence.low.rawValue,
+        behaviorTagsRawValue: [String] = [],
+        behaviorTagSourceRawValue: String = CopyTagSource.inferred.rawValue,
         cooldownDays: Int? = nil,
         cooldownEndAt: Date? = nil,
         decision: CooldownDecision? = nil,
@@ -101,6 +119,12 @@ final class Item {
         self.coverImageData = coverImageData
 
         self.wishPriceCents = max(0, wishPriceCents)
+        self.primaryCategoryRawValue = primaryCategoryRawValue
+        self.secondaryCategoryRawValue = secondaryCategoryRawValue
+        self.categorySourceRawValue = categorySourceRawValue
+        self.categoryConfidenceRawValue = categoryConfidenceRawValue
+        self.behaviorTagsRawValue = behaviorTagsRawValue
+        self.behaviorTagSourceRawValue = behaviorTagSourceRawValue
         self.cooldownDays = cooldownDays
         self.cooldownEndAt = cooldownEndAt
         self.decision = decision
@@ -133,6 +157,42 @@ final class Item {
 
 // MARK: - 业务辅助计算
 extension Item {
+    /// 一级品类的业务语义包装；当历史值异常时回退到 `.other`。
+    var primaryCategory: ItemPrimaryCategory {
+        get { ItemPrimaryCategory(rawValue: primaryCategoryRawValue) ?? .other }
+        set { primaryCategoryRawValue = newValue.rawValue }
+    }
+
+    /// 二级品类的业务语义包装；当历史值异常时回退到 `.other`。
+    var secondaryCategory: ItemSecondaryCategory {
+        get { ItemSecondaryCategory(rawValue: secondaryCategoryRawValue) ?? .other }
+        set { secondaryCategoryRawValue = newValue.rawValue }
+    }
+
+    /// 品类来源的业务语义包装；异常值回退到自动识别，避免界面崩溃。
+    var categorySource: CopyCategorySource {
+        get { CopyCategorySource(rawValue: categorySourceRawValue) ?? .autoDetected }
+        set { categorySourceRawValue = newValue.rawValue }
+    }
+
+    /// 品类置信度的业务语义包装；异常值按低置信度处理。
+    var categoryConfidence: CopyConfidence {
+        get { CopyConfidence(rawValue: categoryConfidenceRawValue) ?? .low }
+        set { categoryConfidenceRawValue = newValue.rawValue }
+    }
+
+    /// 行为标签集合的业务语义包装；会忽略无法识别的历史脏值。
+    var behaviorTags: [ItemBehaviorTag] {
+        get { behaviorTagsRawValue.compactMap(ItemBehaviorTag.init(rawValue:)) }
+        set { behaviorTagsRawValue = newValue.map(\.rawValue) }
+    }
+
+    /// 行为标签来源的业务语义包装；异常值默认回退到系统推断。
+    var behaviorTagSource: CopyTagSource {
+        get { CopyTagSource(rawValue: behaviorTagSourceRawValue) ?? .inferred }
+        set { behaviorTagSourceRawValue = newValue.rawValue }
+    }
+
     /// 展示名称：清理历史数据中遗留的状态后缀，避免与状态标签重复。
     var displayName: String {
         var normalized = name.trimmingCharacters(in: .whitespacesAndNewlines)
