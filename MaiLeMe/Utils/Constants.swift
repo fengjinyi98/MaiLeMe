@@ -18,7 +18,7 @@ enum AppConstants {
         /// 小组件 Kind 标识：吃灰警报卡。
         static let idleAlertKind = "MaiLeMeIdleAlertWidget"
         /// App Group：用于 App 与 Widget 共享快照数据。
-        static let appGroupIdentifier = "group.com.jinyi.MaiLeMe"
+        static let appGroupIdentifier = "group.com.fengjinyi.maileme"
         /// 小组件快照在共享 UserDefaults 中的键名。
         static let snapshotDefaultsKey = "widget.rationalDefense.snapshot.v1"
         /// 小组件触发 App 跳转时使用的 URL Scheme。
@@ -896,58 +896,60 @@ enum AppConstants {
             behaviorTags: [ItemBehaviorTag]
         ) -> DecisionBundle {
             guard let resolver else {
+                assertionFailure("毒舌文案兼容层未能初始化 resolver，已回退到旧版决策文案。")
                 return fallback
             }
 
-            return DecisionBundle(
-                title: resolveDecisionText(
-                    resolver: resolver,
-                    scene: scene,
-                    slot: .title,
-                    fallback: fallback.title,
-                    itemName: itemName,
-                    itemID: itemID,
-                    primaryCategory: primaryCategory,
-                    secondaryCategory: secondaryCategory,
-                    behaviorTags: behaviorTags
-                ),
-                subtitle: resolveDecisionText(
-                    resolver: resolver,
-                    scene: scene,
-                    slot: .subtitle,
-                    fallback: fallback.subtitle,
-                    itemName: itemName,
-                    itemID: itemID,
-                    primaryCategory: primaryCategory,
-                    secondaryCategory: secondaryCategory,
-                    behaviorTags: behaviorTags
-                ),
-                actionTitle: resolveDecisionText(
-                    resolver: resolver,
-                    scene: scene,
-                    slot: .actionTitle,
-                    fallback: fallback.actionTitle,
-                    itemName: itemName,
-                    itemID: itemID,
-                    primaryCategory: primaryCategory,
-                    secondaryCategory: secondaryCategory,
-                    behaviorTags: behaviorTags
+            do {
+                return DecisionBundle(
+                    title: try resolveDecisionText(
+                        resolver: resolver,
+                        scene: scene,
+                        slot: .title,
+                        itemName: itemName,
+                        itemID: itemID,
+                        primaryCategory: primaryCategory,
+                        secondaryCategory: secondaryCategory,
+                        behaviorTags: behaviorTags
+                    ),
+                    subtitle: try resolveDecisionText(
+                        resolver: resolver,
+                        scene: scene,
+                        slot: .subtitle,
+                        itemName: itemName,
+                        itemID: itemID,
+                        primaryCategory: primaryCategory,
+                        secondaryCategory: secondaryCategory,
+                        behaviorTags: behaviorTags
+                    ),
+                    actionTitle: try resolveDecisionText(
+                        resolver: resolver,
+                        scene: scene,
+                        slot: .actionTitle,
+                        itemName: itemName,
+                        itemID: itemID,
+                        primaryCategory: primaryCategory,
+                        secondaryCategory: secondaryCategory,
+                        behaviorTags: behaviorTags
+                    )
                 )
-            )
+            } catch {
+                assertionFailure("毒舌文案兼容层解析决策 bundle 失败：\(error.localizedDescription)，已整体回退到旧版决策文案。")
+                return fallback
+            }
         }
 
-        /// 解析单个决策槽位文案；槽位级失败时仅回退该字段，避免因为一条文案缺失把整组文案都打回旧逻辑。
+        /// 解析单个决策槽位文案；若任意槽位失败，由上层统一回退整组 bundle，避免新旧文案被混搭。
         private static func resolveDecisionText(
             resolver: CopyResolver,
             scene: String,
             slot: CopySlot,
-            fallback: String,
             itemName: String,
             itemID: UUID?,
             primaryCategory: ItemPrimaryCategory,
             secondaryCategory: ItemSecondaryCategory,
             behaviorTags: [ItemBehaviorTag]
-        ) -> String {
+        ) throws -> String {
             let context = CopyContext(
                 module: .decision,
                 scene: scene,
@@ -961,7 +963,7 @@ enum AppConstants {
                 allowRandom: true
             )
 
-            return (try? resolver.resolveSingle(context).text) ?? fallback
+            return try resolver.resolveSingle(context).text
         }
 
         /// 从模板池随机抽取一条并格式化（物品名 + 天数）。

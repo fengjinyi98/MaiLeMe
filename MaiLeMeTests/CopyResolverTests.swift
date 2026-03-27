@@ -227,6 +227,8 @@ final class CopyResolverTests: XCTestCase {
 
     /// 旧版 `AppConstants.RoastCopy` 兼容 API 接入新引擎后，应能返回由 resolver 解析出的决策文案组合。
     func test_legacy_roast_copy_api_returns_resolved_copy_from_engine() {
+        UserDefaults.standard.removeObject(forKey: "copy.memory.recent")
+
         let bundle = AppConstants.RoastCopy.decisionSavedBundle(
             itemName: "Apple Mac mini M4",
             itemID: UUID(uuidString: "11111111-1111-1111-1111-111111111111"),
@@ -235,7 +237,13 @@ final class CopyResolverTests: XCTestCase {
             behaviorTags: [.efficiencyFantasy, .selfImprovement]
         )
 
-        XCTAssertFalse(bundle.title.isEmpty)
-        XCTAssertFalse(bundle.subtitle.isEmpty)
+        XCTAssertEqual(bundle.title, "理性胜利，冲动当场下线")
+        XCTAssertEqual(bundle.subtitle, "你把“想买”变成了“省下”，这波自控力可以发朋友圈。")
+        XCTAssertEqual(bundle.actionTitle, "继续克制")
+
+        let recentDecisionCopyIDs = Set(CopyMemoryStore().recentCopyIDs(module: .decision))
+        XCTAssertTrue(recentDecisionCopyIDs.contains("decision_saved_title_001"))
+        XCTAssertTrue(recentDecisionCopyIDs.contains("decision_saved_subtitle_001"))
+        XCTAssertTrue(recentDecisionCopyIDs.contains("decision_saved_action_001"))
     }
 }
