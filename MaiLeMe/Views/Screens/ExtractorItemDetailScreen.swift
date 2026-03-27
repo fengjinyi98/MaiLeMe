@@ -570,7 +570,11 @@ struct ExtractorItemDetailScreen: View {
     private func presentCelebration(_ payload: CheckinCelebrationPayload) {
         celebrationSnapshot = CheckinCelebrationSnapshot(
             payload: payload,
+            itemID: item.id,
             itemName: item.displayName,
+            primaryCategory: item.primaryCategory,
+            secondaryCategory: item.secondaryCategory,
+            behaviorTags: item.behaviorTags,
             usageCount: item.usageCount,
             currentCostText: viewModel.currentCostPerUseCents(for: item).map { "¥\(centsToYuan($0))" } ?? "未使用",
             imageData: item.coverImageData

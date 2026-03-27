@@ -56,4 +56,41 @@ final class CopyMemoryStoreTests: XCTestCase {
         XCTAssertEqual(recentIDs.last, "decision_saved_title_10")
         XCTAssertFalse(recentIDs.contains("decision_saved_title_9"))
     }
+
+    /// 连续记录完全相同的命中结果时，记忆层应忽略重复写入，避免视图重绘把主线程卡在偏好持久化上。
+    func test_memory_store_skips_duplicate_latest_record() {
+        let defaults = UserDefaults(suiteName: suiteName)!
+        let store = CopyMemoryStore(defaults: defaults)
+
+        store.record(
+            copyID: "empty_state_dark_room_001",
+            module: .emptyState,
+            scene: "dark_room_empty",
+            slot: .body,
+            itemID: nil,
+            tone: .neutral,
+            intensity: .low
+        )
+        store.record(
+            copyID: "empty_state_dark_room_001",
+            module: .emptyState,
+            scene: "dark_room_empty",
+            slot: .body,
+            itemID: nil,
+            tone: .neutral,
+            intensity: .low
+        )
+
+        let rawData = defaults.data(forKey: "copy.memory.recent")
+        let records = try? JSONDecoder().decode([DecodedRecord].self, from: rawData ?? Data())
+
+        XCTAssertEqual(records?.count, 1)
+        XCTAssertEqual(records?.first?.copyID, "empty_state_dark_room_001")
+    }
+}
+
+/// 仅供测试读取 `CopyMemoryStore` 持久化结果的轻量镜像结构。
+private struct DecodedRecord: Decodable {
+    /// 文案唯一 ID。
+    let copyID: String
 }

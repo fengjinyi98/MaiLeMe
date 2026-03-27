@@ -140,16 +140,30 @@ struct SavedDecisionDetailScreen: View {
 
     /// 毒舌主文案：按省钱金额分层，增强分享时的冲击感。
     private var roastHeadline: String {
-        AppConstants.RoastCopy.savedReviewHeadline(savedCents: savedCents, itemID: item.id)
+        AppConstants.RoastCopy.savedReviewHeadline(
+            savedCents: savedCents,
+            itemName: item.displayName,
+            itemID: item.id,
+            primaryCategory: item.primaryCategory,
+            secondaryCategory: item.secondaryCategory,
+            behaviorTags: item.behaviorTags
+        )
     }
 
     /// 毒舌副文案：结合冷静期长度输出更个性化的复盘语气。
     private var roastBody: String {
         let cooldownDays = item.cooldownDays ?? 0
-        return AppConstants.RoastCopy.savedReviewBody(cooldownDays: cooldownDays, itemID: item.id)
+        return AppConstants.RoastCopy.savedReviewBody(
+            cooldownDays: cooldownDays,
+            itemName: item.displayName,
+            itemID: item.id,
+            primaryCategory: item.primaryCategory,
+            secondaryCategory: item.secondaryCategory,
+            behaviorTags: item.behaviorTags
+        )
     }
 
-    /// 复盘文案：用于一键复制和分享时配文。
+    /// 复盘文案：复用 resolver 选出的主/副点评，保证复制文本与分享配文保持同一条叙事。
     private var retrospectiveCopy: String {
         """
         【买了么｜省钱复盘】
@@ -160,6 +174,7 @@ struct SavedDecisionDetailScreen: View {
         
         审判结论：忍住没买。
         毒舌点评：\(roastHeadline)
+        复盘补刀：\(roastBody)
         """
     }
 

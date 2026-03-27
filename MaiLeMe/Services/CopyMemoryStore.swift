@@ -65,6 +65,19 @@ final class CopyMemoryStore {
             createdAt: Date()
         )
 
+        // 对于同一调用点在一次视图生命周期内的重复重绘，若命中结果完全一致，就不再重复写入偏好；
+        // 否则像空状态这类“纯展示型文案”会在每次 body 计算时触发同步磁盘/XPC 写入，拖慢主线程。
+        if let latestRecord = records.first,
+           latestRecord.copyID == newRecord.copyID,
+           latestRecord.module == newRecord.module,
+           latestRecord.scene == newRecord.scene,
+           latestRecord.slot == newRecord.slot,
+           latestRecord.itemID == newRecord.itemID,
+           latestRecord.tone == newRecord.tone,
+           latestRecord.intensity == newRecord.intensity {
+            return
+        }
+
         // 采用“最新在前”的滚动队列，读取时无需额外倒序即可直接按最近顺序返回。
         records.insert(newRecord, at: 0)
         if records.count > maximumRecordCount {

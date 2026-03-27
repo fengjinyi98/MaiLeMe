@@ -457,27 +457,168 @@ enum AppConstants {
         // MARK: - 通知生成入口
         /// 生成轻提醒文案。
         static func light(itemName: String, idleDays: Int) -> String {
-            format(templateFrom: lightTemplates, itemName: itemName, idleDays: idleDays)
+            light(
+                itemName: itemName,
+                idleDays: idleDays,
+                itemID: nil,
+                primaryCategory: .other,
+                secondaryCategory: .other,
+                behaviorTags: []
+            )
+        }
+
+        /// 生成轻提醒文案：支持把条目语义透传给 resolver，保证通知也能走 item-scoped 文案选择。
+        static func light(
+            itemName: String,
+            idleDays: Int,
+            itemID: UUID?,
+            primaryCategory: ItemPrimaryCategory,
+            secondaryCategory: ItemSecondaryCategory,
+            behaviorTags: [ItemBehaviorTag]
+        ) -> String {
+            resolveNotificationBody(
+                scene: "light_reminder",
+                fallback: format(templateFrom: lightTemplates, itemName: itemName, idleDays: idleDays),
+                itemName: itemName,
+                idleDays: idleDays,
+                itemID: itemID,
+                primaryCategory: primaryCategory,
+                secondaryCategory: secondaryCategory,
+                behaviorTags: behaviorTags,
+                intensityCap: .low
+            )
         }
 
         /// 生成强提醒文案。
         static func strong(itemName: String, idleDays: Int) -> String {
-            format(templateFrom: strongTemplates, itemName: itemName, idleDays: idleDays)
+            strong(
+                itemName: itemName,
+                idleDays: idleDays,
+                itemID: nil,
+                primaryCategory: .other,
+                secondaryCategory: .other,
+                behaviorTags: []
+            )
+        }
+
+        /// 生成强提醒文案：支持把条目语义透传给 resolver，便于办公/数码等高风险品类选择更贴脸的话术。
+        static func strong(
+            itemName: String,
+            idleDays: Int,
+            itemID: UUID?,
+            primaryCategory: ItemPrimaryCategory,
+            secondaryCategory: ItemSecondaryCategory,
+            behaviorTags: [ItemBehaviorTag]
+        ) -> String {
+            resolveNotificationBody(
+                scene: "strong_reminder",
+                fallback: format(templateFrom: strongTemplates, itemName: itemName, idleDays: idleDays),
+                itemName: itemName,
+                idleDays: idleDays,
+                itemID: itemID,
+                primaryCategory: primaryCategory,
+                secondaryCategory: secondaryCategory,
+                behaviorTags: behaviorTags,
+                intensityCap: .high
+            )
         }
 
         /// 生成冷静期结束提醒文案。
         static func cooldownReady(itemName: String) -> String {
-            format(templateFrom: cooldownReadyTemplates, itemName: itemName)
+            cooldownReady(
+                itemName: itemName,
+                itemID: nil,
+                primaryCategory: .other,
+                secondaryCategory: .other,
+                behaviorTags: []
+            )
+        }
+
+        /// 生成冷静期结束提醒文案：支持把条目语义透传给 resolver，确保通知链路也能参与命中记忆。
+        static func cooldownReady(
+            itemName: String,
+            itemID: UUID?,
+            primaryCategory: ItemPrimaryCategory,
+            secondaryCategory: ItemSecondaryCategory,
+            behaviorTags: [ItemBehaviorTag]
+        ) -> String {
+            resolveNotificationBody(
+                scene: "cooldown_ready",
+                fallback: format(templateFrom: cooldownReadyTemplates, itemName: itemName),
+                itemName: itemName,
+                idleDays: nil,
+                itemID: itemID,
+                primaryCategory: primaryCategory,
+                secondaryCategory: secondaryCategory,
+                behaviorTags: behaviorTags,
+                intensityCap: .medium
+            )
         }
 
         /// 生成冷静期结束追提醒文案。
         static func cooldownFollowup(itemName: String) -> String {
-            format(templateFrom: cooldownFollowupTemplates, itemName: itemName)
+            cooldownFollowup(
+                itemName: itemName,
+                itemID: nil,
+                primaryCategory: .other,
+                secondaryCategory: .other,
+                behaviorTags: []
+            )
+        }
+
+        /// 生成冷静期结束追提醒文案：支持把条目语义透传给 resolver，避免兼容层在通知入口断链。
+        static func cooldownFollowup(
+            itemName: String,
+            itemID: UUID?,
+            primaryCategory: ItemPrimaryCategory,
+            secondaryCategory: ItemSecondaryCategory,
+            behaviorTags: [ItemBehaviorTag]
+        ) -> String {
+            resolveNotificationBody(
+                scene: "cooldown_followup",
+                fallback: format(templateFrom: cooldownFollowupTemplates, itemName: itemName),
+                itemName: itemName,
+                idleDays: nil,
+                itemID: itemID,
+                primaryCategory: primaryCategory,
+                secondaryCategory: secondaryCategory,
+                behaviorTags: behaviorTags,
+                intensityCap: .medium
+            )
         }
 
         /// 生成吃灰处置追提醒文案。
         static func idleRescueFollowup(itemName: String, idleDays: Int) -> String {
-            format(templateFrom: rescueFollowupTemplates, itemName: itemName, idleDays: idleDays)
+            idleRescueFollowup(
+                itemName: itemName,
+                idleDays: idleDays,
+                itemID: nil,
+                primaryCategory: .other,
+                secondaryCategory: .other,
+                behaviorTags: []
+            )
+        }
+
+        /// 生成吃灰处置追提醒文案：支持条目语义透传，让通知与挽救页使用同一套上下文。
+        static func idleRescueFollowup(
+            itemName: String,
+            idleDays: Int,
+            itemID: UUID?,
+            primaryCategory: ItemPrimaryCategory,
+            secondaryCategory: ItemSecondaryCategory,
+            behaviorTags: [ItemBehaviorTag]
+        ) -> String {
+            resolveNotificationBody(
+                scene: "rescue_followup",
+                fallback: format(templateFrom: rescueFollowupTemplates, itemName: itemName, idleDays: idleDays),
+                itemName: itemName,
+                idleDays: idleDays,
+                itemID: itemID,
+                primaryCategory: primaryCategory,
+                secondaryCategory: secondaryCategory,
+                behaviorTags: behaviorTags,
+                intensityCap: .high
+            )
         }
 
         // MARK: - 仪式文案生成入口
@@ -601,17 +742,62 @@ enum AppConstants {
 
         /// 冷静期决策分享结果文案。
         static func decisionShareOutcome(isSaved: Bool, seedKey: String) -> String {
+            decisionShareOutcome(
+                isSaved: isSaved,
+                seedKey: seedKey,
+                itemName: "",
+                itemID: nil,
+                primaryCategory: .other,
+                secondaryCategory: .other,
+                behaviorTags: []
+            )
+        }
+
+        /// 冷静期决策分享结果文案：支持 resolver 记忆与未来的品类扩展。
+        static func decisionShareOutcome(
+            isSaved: Bool,
+            seedKey: String,
+            itemName: String,
+            itemID: UUID?,
+            primaryCategory: ItemPrimaryCategory,
+            secondaryCategory: ItemSecondaryCategory,
+            behaviorTags: [ItemBehaviorTag]
+        ) -> String {
             if isSaved {
-                return pickStable(
-                    from: decisionSavedOutcomeTemplates,
-                    fallback: "冷静期成功忍住没买，直接省下一笔。",
-                    seedKey: seedKey
+                return resolveCopyText(
+                    module: .share,
+                    scene: "decision_saved_outcome",
+                    slot: .body,
+                    fallback: pickStable(
+                        from: decisionSavedOutcomeTemplates,
+                        fallback: "冷静期成功忍住没买，直接省下一笔。",
+                        seedKey: seedKey
+                    ),
+                    itemName: itemName,
+                    itemID: itemID,
+                    primaryCategory: primaryCategory,
+                    secondaryCategory: secondaryCategory,
+                    behaviorTags: behaviorTags,
+                    intensityCap: .low,
+                    allowRandom: false
                 )
             }
-            return pickStable(
-                from: decisionPurchasedOutcomeTemplates,
-                fallback: "冷静期结束后理性买入，已进入榨干机计划。",
-                seedKey: seedKey
+            return resolveCopyText(
+                module: .share,
+                scene: "decision_purchased_outcome",
+                slot: .body,
+                fallback: pickStable(
+                    from: decisionPurchasedOutcomeTemplates,
+                    fallback: "冷静期结束后理性买入，已进入榨干机计划。",
+                    seedKey: seedKey
+                ),
+                itemName: itemName,
+                itemID: itemID,
+                primaryCategory: primaryCategory,
+                secondaryCategory: secondaryCategory,
+                behaviorTags: behaviorTags,
+                intensityCap: .medium,
+                allowRandom: false
             )
         }
 
@@ -621,11 +807,20 @@ enum AppConstants {
             isSaved: Bool,
             metricTitle: String,
             metricValue: String,
-            roastLine: String
+            roastLine: String,
+            itemID: UUID? = nil,
+            primaryCategory: ItemPrimaryCategory = .other,
+            secondaryCategory: ItemSecondaryCategory = .other,
+            behaviorTags: [ItemBehaviorTag] = []
         ) -> String {
             let outcome = decisionShareOutcome(
                 isSaved: isSaved,
-                seedKey: "\(itemName)-\(metricValue)-\(isSaved)"
+                seedKey: "\(itemName)-\(metricValue)-\(isSaved)",
+                itemName: itemName,
+                itemID: itemID,
+                primaryCategory: primaryCategory,
+                secondaryCategory: secondaryCategory,
+                behaviorTags: behaviorTags
             )
             return """
             我在「买了么」完成一次冷静期决策：
@@ -814,12 +1009,28 @@ enum AppConstants {
             itemName: String,
             usageCount: Int,
             currentCostText: String,
-            roastLine: String
+            roastLine: String,
+            itemID: UUID? = nil,
+            primaryCategory: ItemPrimaryCategory = .other,
+            secondaryCategory: ItemSecondaryCategory = .other,
+            behaviorTags: [ItemBehaviorTag] = []
         ) -> String {
-            let closing = pickStable(
-                from: checkinShareClosingTemplates,
-                fallback: "你也来试试，别让买过的东西继续吃灰。",
-                seedKey: "\(itemName)-\(usageCount)"
+            let closing = resolveCopyText(
+                module: .share,
+                scene: "checkin_share_closing",
+                slot: .body,
+                fallback: pickStable(
+                    from: checkinShareClosingTemplates,
+                    fallback: "你也来试试，别让买过的东西继续吃灰。",
+                    seedKey: "\(itemName)-\(usageCount)"
+                ),
+                itemName: itemName,
+                itemID: itemID,
+                primaryCategory: primaryCategory,
+                secondaryCategory: secondaryCategory,
+                behaviorTags: behaviorTags,
+                intensityCap: .low,
+                allowRandom: false
             )
             return """
             我在「买了么」完成一次榨干机打卡：
@@ -1037,60 +1248,170 @@ enum AppConstants {
         // MARK: - 省钱复盘文案生成入口
         /// 省钱复盘主文案。
         static func savedReviewHeadline(savedCents: Int, itemID: UUID) -> String {
+            savedReviewHeadline(
+                savedCents: savedCents,
+                itemName: "",
+                itemID: itemID,
+                primaryCategory: .other,
+                secondaryCategory: .other,
+                behaviorTags: []
+            )
+        }
+
+        /// 省钱复盘主文案：支持条目语义透传，保证复盘页与分享文案都能命中新引擎。
+        static func savedReviewHeadline(
+            savedCents: Int,
+            itemName: String,
+            itemID: UUID,
+            primaryCategory: ItemPrimaryCategory,
+            secondaryCategory: ItemSecondaryCategory,
+            behaviorTags: [ItemBehaviorTag]
+        ) -> String {
             let templates: [String]
             let fallback: String
+            let scene: String
+            let intensityCap: CopyIntensity
             switch savedCents {
             case ..<10_000:
                 templates = savedHeadlineLowTemplates
                 fallback = "手刹及时拉住，冲动消费当场熄火。"
+                scene = "headline_low"
+                intensityCap = .low
             case 10_000..<50_000:
                 templates = savedHeadlineMidTemplates
                 fallback = "你把剁手预算，硬生生扳成了存款。"
+                scene = "headline_mid"
+                intensityCap = .medium
             case 50_000..<100_000:
                 templates = savedHeadlineHighTemplates
                 fallback = "这波不是省钱，是把未来的焦虑提前清仓。"
+                scene = "headline_high"
+                intensityCap = .high
             default:
                 templates = savedHeadlineHugeTemplates
                 fallback = "一念之间省下大件，你的理性配得上热搜。"
+                scene = "headline_huge"
+                intensityCap = .high
             }
-            return pickStable(
-                from: templates,
-                fallback: fallback,
-                seedKey: itemID.uuidString,
-                extraSeed: savedCents
+            return resolveCopyText(
+                module: .savedReview,
+                scene: scene,
+                slot: .title,
+                fallback: pickStable(
+                    from: templates,
+                    fallback: fallback,
+                    seedKey: itemID.uuidString,
+                    extraSeed: savedCents
+                ),
+                itemName: itemName,
+                itemID: itemID,
+                primaryCategory: primaryCategory,
+                secondaryCategory: secondaryCategory,
+                behaviorTags: behaviorTags,
+                intensityCap: intensityCap,
+                allowRandom: false
             )
         }
 
         /// 省钱复盘副文案。
         static func savedReviewBody(cooldownDays: Int, itemID: UUID) -> String {
+            savedReviewBody(
+                cooldownDays: cooldownDays,
+                itemName: "",
+                itemID: itemID,
+                primaryCategory: .other,
+                secondaryCategory: .other,
+                behaviorTags: []
+            )
+        }
+
+        /// 省钱复盘副文案：支持条目语义透传，保证 UI 与分享文案使用同一套 resolver 结果。
+        static func savedReviewBody(
+            cooldownDays: Int,
+            itemName: String,
+            itemID: UUID,
+            primaryCategory: ItemPrimaryCategory,
+            secondaryCategory: ItemSecondaryCategory,
+            behaviorTags: [ItemBehaviorTag]
+        ) -> String {
             let templates: [String]
             let fallback: String
+            let scene: String
+            let intensityCap: CopyIntensity
             if cooldownDays >= 15 {
                 templates = savedBodyLongCooldownTemplates
                 fallback = "冷静期拉满还忍住了，这不是拖延，这是成熟。"
+                scene = "body_long_cooldown"
+                intensityCap = .medium
             } else if cooldownDays >= 7 {
                 templates = savedBodyMidCooldownTemplates
                 fallback = "挺过一周冲动窗口，你的钱包终于学会拒绝。"
+                scene = "body_mid_cooldown"
+                intensityCap = .medium
             } else {
                 templates = savedBodyShortCooldownTemplates
                 fallback = "短冷静期也能守住底线，说明你是真想变有钱。"
+                scene = "body_short_cooldown"
+                intensityCap = .low
             }
-            return pickStable(
-                from: templates,
-                fallback: fallback,
-                seedKey: itemID.uuidString,
-                extraSeed: cooldownDays
+            return resolveCopyText(
+                module: .savedReview,
+                scene: scene,
+                slot: .body,
+                fallback: pickStable(
+                    from: templates,
+                    fallback: fallback,
+                    seedKey: itemID.uuidString,
+                    extraSeed: cooldownDays
+                ),
+                itemName: itemName,
+                itemID: itemID,
+                primaryCategory: primaryCategory,
+                secondaryCategory: secondaryCategory,
+                behaviorTags: behaviorTags,
+                intensityCap: intensityCap,
+                allowRandom: false
             )
         }
 
         /// 小黑屋空状态文案。
         static func darkRoomEmpty() -> String {
-            pickRandom(from: darkRoomEmptyTemplates, fallback: "小黑屋现在是空的，说明你今天还挺稳。")
+            resolveCopyText(
+                module: .emptyState,
+                scene: "dark_room_empty",
+                slot: .body,
+                fallback: pickRandom(
+                    from: darkRoomEmptyTemplates,
+                    fallback: "小黑屋现在是空的，说明你今天还挺稳。"
+                ),
+                itemName: "",
+                itemID: nil,
+                primaryCategory: .other,
+                secondaryCategory: .other,
+                behaviorTags: [],
+                intensityCap: .low,
+                allowRandom: false
+            )
         }
 
         /// 榨干机空状态文案。
         static func extractorEmpty() -> String {
-            pickRandom(from: extractorEmptyTemplates, fallback: "榨干机还没开张，先把想买清单里的条目做完决策。")
+            resolveCopyText(
+                module: .emptyState,
+                scene: "extractor_empty",
+                slot: .body,
+                fallback: pickRandom(
+                    from: extractorEmptyTemplates,
+                    fallback: "榨干机还没开张，先把想买清单里的条目做完决策。"
+                ),
+                itemName: "",
+                itemID: nil,
+                primaryCategory: .other,
+                secondaryCategory: .other,
+                behaviorTags: [],
+                intensityCap: .low,
+                allowRandom: false
+            )
         }
 
         // MARK: - 通用工具
@@ -1249,6 +1570,39 @@ enum AppConstants {
                 assertionFailure("毒舌文案兼容层解析单条文案失败：\(error.localizedDescription)，已回退到旧版槽位文案。")
                 return fallback
             }
+        }
+
+        /// 解析通知正文：把通知场景统一收口到 resolver，避免各类通知再次散落独立模板逻辑。
+        private static func resolveNotificationBody(
+            scene: String,
+            fallback: String,
+            itemName: String,
+            idleDays: Int?,
+            itemID: UUID?,
+            primaryCategory: ItemPrimaryCategory,
+            secondaryCategory: ItemSecondaryCategory,
+            behaviorTags: [ItemBehaviorTag],
+            intensityCap: CopyIntensity
+        ) -> String {
+            var variables: [String: String] = [:]
+            if let idleDays {
+                variables["idleDays"] = "\(idleDays)"
+            }
+
+            return resolveCopyText(
+                module: .notification,
+                scene: scene,
+                slot: .body,
+                fallback: fallback,
+                itemName: itemName,
+                itemID: itemID,
+                primaryCategory: primaryCategory,
+                secondaryCategory: secondaryCategory,
+                behaviorTags: behaviorTags,
+                intensityCap: intensityCap,
+                allowRandom: false,
+                variables: variables
+            )
         }
 
         /// 从模板池随机抽取一条并格式化（物品名 + 天数）。

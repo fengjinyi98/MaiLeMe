@@ -71,14 +71,20 @@ final class NotificationManager: NSObject {
             itemName: item.displayName,
             baseDate: baseDate,
             idleDays: AppConstants.Notification.lightIdleDays,
-            isStrong: false
+            isStrong: false,
+            primaryCategory: item.primaryCategory,
+            secondaryCategory: item.secondaryCategory,
+            behaviorTags: item.behaviorTags
         )
         await scheduleIdleReminder(
             itemID: item.id,
             itemName: item.displayName,
             baseDate: baseDate,
             idleDays: AppConstants.Notification.strongIdleDays,
-            isStrong: true
+            isStrong: true,
+            primaryCategory: item.primaryCategory,
+            secondaryCategory: item.secondaryCategory,
+            behaviorTags: item.behaviorTags
         )
     }
 
@@ -96,7 +102,13 @@ final class NotificationManager: NSObject {
             await scheduleDateReminder(
                 identifier: notificationIdentifier(for: item.id, type: .cooldownReady),
                 title: AppConstants.Notification.title,
-                body: AppConstants.RoastCopy.cooldownReady(itemName: item.displayName),
+                body: AppConstants.RoastCopy.cooldownReady(
+                    itemName: item.displayName,
+                    itemID: item.id,
+                    primaryCategory: item.primaryCategory,
+                    secondaryCategory: item.secondaryCategory,
+                    behaviorTags: item.behaviorTags
+                ),
                 triggerDate: cooldownEndAt
             )
         }
@@ -106,7 +118,13 @@ final class NotificationManager: NSObject {
             await scheduleDateReminder(
                 identifier: notificationIdentifier(for: item.id, type: .cooldownFollowup),
                 title: AppConstants.Notification.title,
-                body: AppConstants.RoastCopy.cooldownFollowup(itemName: item.displayName),
+                body: AppConstants.RoastCopy.cooldownFollowup(
+                    itemName: item.displayName,
+                    itemID: item.id,
+                    primaryCategory: item.primaryCategory,
+                    secondaryCategory: item.secondaryCategory,
+                    behaviorTags: item.behaviorTags
+                ),
                 triggerDate: followupAt
             )
         }
@@ -174,7 +192,11 @@ final class NotificationManager: NSObject {
             title: AppConstants.Notification.title,
             body: AppConstants.RoastCopy.idleRescueFollowup(
                 itemName: item.displayName,
-                idleDays: projectedIdleDays
+                idleDays: projectedIdleDays,
+                itemID: item.id,
+                primaryCategory: item.primaryCategory,
+                secondaryCategory: item.secondaryCategory,
+                behaviorTags: item.behaviorTags
             ),
             triggerDate: triggerDate
         )
@@ -186,7 +208,10 @@ final class NotificationManager: NSObject {
         itemName: String,
         baseDate: Date,
         idleDays: Int,
-        isStrong: Bool
+        isStrong: Bool,
+        primaryCategory: ItemPrimaryCategory,
+        secondaryCategory: ItemSecondaryCategory,
+        behaviorTags: [ItemBehaviorTag]
     ) async {
         guard let targetDate = calendar.date(byAdding: .day, value: idleDays, to: baseDate) else {
             return
@@ -206,8 +231,22 @@ final class NotificationManager: NSObject {
             identifier: notificationIdentifier(for: itemID, type: type),
             title: AppConstants.Notification.title,
             body: isStrong
-                ? AppConstants.RoastCopy.strong(itemName: itemName, idleDays: idleDays)
-                : AppConstants.RoastCopy.light(itemName: itemName, idleDays: idleDays),
+                ? AppConstants.RoastCopy.strong(
+                    itemName: itemName,
+                    idleDays: idleDays,
+                    itemID: itemID,
+                    primaryCategory: primaryCategory,
+                    secondaryCategory: secondaryCategory,
+                    behaviorTags: behaviorTags
+                )
+                : AppConstants.RoastCopy.light(
+                    itemName: itemName,
+                    idleDays: idleDays,
+                    itemID: itemID,
+                    primaryCategory: primaryCategory,
+                    secondaryCategory: secondaryCategory,
+                    behaviorTags: behaviorTags
+                ),
             triggerDate: triggerDate
         )
     }

@@ -350,7 +350,11 @@ struct WishItemDetailScreen: View {
     private func presentDecisionCelebration(_ payload: DarkRoomDecisionCelebrationPayload) {
         decisionCelebration = DecisionCelebrationSnapshot(
             payload: payload,
+            itemID: item.id,
             itemName: item.displayName,
+            primaryCategory: item.primaryCategory,
+            secondaryCategory: item.secondaryCategory,
+            behaviorTags: item.behaviorTags,
             imageData: item.coverImageData
         )
     }

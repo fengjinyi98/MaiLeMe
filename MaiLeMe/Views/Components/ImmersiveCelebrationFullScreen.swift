@@ -12,7 +12,15 @@ import UIKit
 struct CheckinCelebrationSnapshot: Identifiable {
     let id = UUID()
     let payload: CheckinCelebrationPayload
+    /// 被打卡条目的主键：用于分享文案命中 item-scoped 的 share 模块记录。
+    let itemID: UUID
     let itemName: String
+    /// 一级品类：分享文案需要沿用条目的分类语义。
+    let primaryCategory: ItemPrimaryCategory
+    /// 二级品类：分享文案需要保留更细的商品上下文。
+    let secondaryCategory: ItemSecondaryCategory
+    /// 行为标签：让 closing 文案能感知效率幻想、自我提升等消费动机。
+    let behaviorTags: [ItemBehaviorTag]
     let usageCount: Int
     let currentCostText: String
     let imageData: Data?
@@ -22,7 +30,15 @@ struct CheckinCelebrationSnapshot: Identifiable {
 struct DecisionCelebrationSnapshot: Identifiable {
     let id = UUID()
     let payload: DarkRoomDecisionCelebrationPayload
+    /// 被决策条目的主键：用于分享文案命中 item-scoped 的 share 模块记录。
+    let itemID: UUID
     let itemName: String
+    /// 一级品类：分享文案需要保留原条目的分类上下文。
+    let primaryCategory: ItemPrimaryCategory
+    /// 二级品类：用于让结果文案命中更贴脸的场景分支。
+    let secondaryCategory: ItemSecondaryCategory
+    /// 行为标签：供分享 closing / outcome 文案继续感知消费动机。
+    let behaviorTags: [ItemBehaviorTag]
     let imageData: Data?
 }
 
@@ -50,7 +66,11 @@ struct CheckinCelebrationFullScreen: View {
             itemName: snapshot.itemName,
             usageCount: snapshot.usageCount,
             currentCostText: snapshot.currentCostText,
-            roastLine: snapshot.payload.roastLine
+            roastLine: snapshot.payload.roastLine,
+            itemID: snapshot.itemID,
+            primaryCategory: snapshot.primaryCategory,
+            secondaryCategory: snapshot.secondaryCategory,
+            behaviorTags: snapshot.behaviorTags
         )
     }
 
@@ -280,7 +300,11 @@ struct DecisionCelebrationFullScreen: View {
             isSaved: snapshot.payload.tone == .saved,
             metricTitle: snapshot.payload.metricTitle,
             metricValue: snapshot.payload.metricValue,
-            roastLine: snapshot.payload.roastLine
+            roastLine: snapshot.payload.roastLine,
+            itemID: snapshot.itemID,
+            primaryCategory: snapshot.primaryCategory,
+            secondaryCategory: snapshot.secondaryCategory,
+            behaviorTags: snapshot.behaviorTags
         )
     }
 

@@ -438,4 +438,126 @@ final class CopyResolverTests: XCTestCase {
         XCTAssertEqual(sceneBySlot[.badge], "steady_high_usage")
         XCTAssertEqual(sceneBySlot[.roast], "default")
     }
+
+    /// 通知调度链路应把条目语义与场景透传给 resolver，确保轻提醒/强提醒/冷静期提醒/处置追提醒都进入新引擎。
+    @MainActor
+    func test_notification_manager_uses_item_context_for_all_notification_scenes() async throws {
+        clearStandardCopyMemory()
+
+        let purchasedItem = makeOfficeDesktopPurchasedItem(
+            id: UUID(uuidString: "66666666-6666-6666-6666-666666666666")!,
+            purchaseAt: Date()
+        )
+        let cooldownItem = Item(
+            id: UUID(uuidString: "77777777-7777-7777-7777-777777777777")!,
+            name: "Apple Mac mini M4",
+            createdAt: Date(),
+            status: .wish,
+            wishPriceCents: 399_999,
+            primaryCategoryRawValue: ItemPrimaryCategory.office.rawValue,
+            secondaryCategoryRawValue: ItemSecondaryCategory.desktopComputer.rawValue,
+            categorySourceRawValue: CopyCategorySource.userSelected.rawValue,
+            categoryConfidenceRawValue: CopyConfidence.high.rawValue,
+            behaviorTagsRawValue: [
+                ItemBehaviorTag.efficiencyFantasy.rawValue,
+                ItemBehaviorTag.selfImprovement.rawValue
+            ],
+            behaviorTagSourceRawValue: CopyTagSource.userAdjusted.rawValue,
+            cooldownDays: 7,
+            cooldownEndAt: Date().addingTimeInterval(60 * 60)
+        )
+
+        await NotificationManager.shared.scheduleIdleReminders(for: purchasedItem)
+        await NotificationManager.shared.scheduleRescueReminder(for: purchasedItem, days: 7)
+        await NotificationManager.shared.scheduleCooldownDecisionReminders(for: cooldownItem)
+
+        let notificationRecords = try loadStandardCopyMemoryRecords().filter { record in
+            record.module == .notification
+        }
+        let purchasedScenes = Set(notificationRecords.compactMap { record in
+            record.itemID == purchasedItem.id ? record.scene : nil
+        })
+        let cooldownScenes = Set(notificationRecords.compactMap { record in
+            record.itemID == cooldownItem.id ? record.scene : nil
+        })
+
+        XCTAssertEqual(
+            purchasedScenes,
+            Set(["light_reminder", "strong_reminder", "rescue_followup"])
+        )
+        XCTAssertEqual(
+            cooldownScenes,
+            Set(["cooldown_ready", "cooldown_followup"])
+        )
+        XCTAssertTrue(notificationRecords.allSatisfy { $0.slot == .body })
+    }
+
+    /// 省钱复盘、空状态与分享兼容 API 接入新引擎后，应把命中场景写入记忆层，证明调用点已经不再停留在静态模板池。
+    func test_saved_review_empty_state_and_share_apis_record_resolved_copy_usage() throws {
+        clearStandardCopyMemory()
+
+        let itemID = UUID(uuidString: "88888888-8888-8888-8888-888888888888")!
+        let reviewHeadline = AppConstants.RoastCopy.savedReviewHeadline(
+            savedCents: 60_000,
+            itemID: itemID
+        )
+        let reviewBody = AppConstants.RoastCopy.savedReviewBody(
+            cooldownDays: 10,
+            itemID: itemID
+        )
+        let darkRoomEmptyCopy = AppConstants.RoastCopy.darkRoomEmpty()
+        let extractorEmptyCopy = AppConstants.RoastCopy.extractorEmpty()
+        let decisionShareCopy = AppConstants.RoastCopy.decisionShareText(
+            itemName: "Apple Mac mini M4",
+            isSaved: true,
+            metricTitle: "省下金额",
+            metricValue: "¥3999.99",
+            roastLine: reviewHeadline,
+            itemID: itemID,
+            primaryCategory: .office,
+            secondaryCategory: .desktopComputer,
+            behaviorTags: [.efficiencyFantasy, .selfImprovement]
+        )
+        let checkinShareCopy = AppConstants.RoastCopy.checkinShareText(
+            itemName: "Apple Mac mini M4",
+            usageCount: 3,
+            currentCostText: "¥1333.33",
+            roastLine: "继续连击",
+            itemID: itemID,
+            primaryCategory: .office,
+            secondaryCategory: .desktopComputer,
+            behaviorTags: [.efficiencyFantasy, .selfImprovement]
+        )
+
+        XCTAssertEqual(reviewHeadline, "这波不是省钱，是把未来的焦虑提前清仓。")
+        XCTAssertEqual(reviewBody, "挺过一周冲动窗口，你的钱包终于学会拒绝。")
+        XCTAssertEqual(darkRoomEmptyCopy, "小黑屋现在是空的，说明你今天还挺稳。")
+        XCTAssertEqual(extractorEmptyCopy, "榨干机还没开张，先把想买清单里的条目做完决策。")
+        XCTAssertTrue(decisionShareCopy.contains("冷静期成功忍住没买，直接省下一笔。"))
+        XCTAssertTrue(checkinShareCopy.contains("你也来试试，别让买过的东西继续吃灰。"))
+
+        let records = try loadStandardCopyMemoryRecords()
+        let savedReviewRecords = records.filter { record in
+            record.module == .savedReview && record.itemID == itemID
+        }
+        let savedReviewSceneBySlot = Dictionary(uniqueKeysWithValues: savedReviewRecords.map { ($0.slot, $0.scene) })
+        let emptyStateRecords = records.filter { $0.module == .emptyState }
+        let emptyStateScenes = Set(emptyStateRecords.map(\.scene))
+        let shareRecords = records.filter { record in
+            record.module == .share && record.itemID == itemID
+        }
+        let shareScenes = Set(shareRecords.map(\.scene))
+
+        XCTAssertEqual(savedReviewRecords.count, 2)
+        XCTAssertEqual(Set(savedReviewRecords.map(\.slot)), Set([.title, .body]))
+        XCTAssertEqual(savedReviewSceneBySlot[.title], "headline_high")
+        XCTAssertEqual(savedReviewSceneBySlot[.body], "body_mid_cooldown")
+        XCTAssertEqual(emptyStateRecords.count, 2)
+        XCTAssertEqual(Set(emptyStateRecords.map(\.slot)), Set([.body]))
+        XCTAssertEqual(emptyStateScenes, Set(["dark_room_empty", "extractor_empty"]))
+        XCTAssertEqual(shareRecords.count, 2)
+        XCTAssertEqual(Set(shareRecords.map(\.slot)), Set([.body]))
+        XCTAssertEqual(shareScenes, Set(["decision_saved_outcome", "checkin_share_closing"]))
+        XCTAssertTrue(shareRecords.allSatisfy { $0.itemID == itemID })
+    }
 }

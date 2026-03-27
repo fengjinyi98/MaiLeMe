@@ -30,29 +30,67 @@ enum MockNotificationFactory {
     }
 
     /// 发送连续两条毒舌风格通知，便于观察系统展示效果。
-    static func sendRoastSequence(itemName: String = "Kindle") async {
+    static func sendRoastSequence(
+        itemName: String = "Kindle",
+        itemID: UUID? = nil,
+        primaryCategory: ItemPrimaryCategory = .other,
+        secondaryCategory: ItemSecondaryCategory = .other,
+        behaviorTags: [ItemBehaviorTag] = []
+    ) async {
         await NotificationManager.shared.scheduleDebugNotification(
             title: "Mock 轻提醒",
-            body: AppConstants.RoastCopy.light(itemName: itemName, idleDays: AppConstants.Notification.lightIdleDays),
+            body: AppConstants.RoastCopy.light(
+                itemName: itemName,
+                idleDays: AppConstants.Notification.lightIdleDays,
+                itemID: itemID,
+                primaryCategory: primaryCategory,
+                secondaryCategory: secondaryCategory,
+                behaviorTags: behaviorTags
+            ),
             after: 4
         )
         await NotificationManager.shared.scheduleDebugNotification(
             title: "Mock 强提醒",
-            body: AppConstants.RoastCopy.strong(itemName: itemName, idleDays: AppConstants.Notification.strongIdleDays),
+            body: AppConstants.RoastCopy.strong(
+                itemName: itemName,
+                idleDays: AppConstants.Notification.strongIdleDays,
+                itemID: itemID,
+                primaryCategory: primaryCategory,
+                secondaryCategory: secondaryCategory,
+                behaviorTags: behaviorTags
+            ),
             after: 8
         )
     }
 
     /// 发送冷静期决策提醒组，便于联调“到期提醒 + 追提醒”文案。
-    static func sendCooldownDecisionSequence(itemName: String = "机械键盘") async {
+    static func sendCooldownDecisionSequence(
+        itemName: String = "机械键盘",
+        itemID: UUID? = nil,
+        primaryCategory: ItemPrimaryCategory = .other,
+        secondaryCategory: ItemSecondaryCategory = .other,
+        behaviorTags: [ItemBehaviorTag] = []
+    ) async {
         await NotificationManager.shared.scheduleDebugNotification(
             title: "Mock 到期提醒",
-            body: AppConstants.RoastCopy.cooldownReady(itemName: itemName),
+            body: AppConstants.RoastCopy.cooldownReady(
+                itemName: itemName,
+                itemID: itemID,
+                primaryCategory: primaryCategory,
+                secondaryCategory: secondaryCategory,
+                behaviorTags: behaviorTags
+            ),
             after: 3
         )
         await NotificationManager.shared.scheduleDebugNotification(
             title: "Mock 追提醒",
-            body: AppConstants.RoastCopy.cooldownFollowup(itemName: itemName),
+            body: AppConstants.RoastCopy.cooldownFollowup(
+                itemName: itemName,
+                itemID: itemID,
+                primaryCategory: primaryCategory,
+                secondaryCategory: secondaryCategory,
+                behaviorTags: behaviorTags
+            ),
             after: 6
         )
     }
