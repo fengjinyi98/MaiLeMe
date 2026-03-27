@@ -224,4 +224,18 @@ final class CopyResolverTests: XCTestCase {
         let resolved = try resolver.resolveSingle(makeDecisionContext(scene: "decision_saved"))
         XCTAssertEqual(resolved.id, "decision_saved_title_fresh_001")
     }
+
+    /// 旧版 `AppConstants.RoastCopy` 兼容 API 接入新引擎后，应能返回由 resolver 解析出的决策文案组合。
+    func test_legacy_roast_copy_api_returns_resolved_copy_from_engine() {
+        let bundle = AppConstants.RoastCopy.decisionSavedBundle(
+            itemName: "Apple Mac mini M4",
+            itemID: UUID(uuidString: "11111111-1111-1111-1111-111111111111"),
+            primaryCategory: .office,
+            secondaryCategory: .desktopComputer,
+            behaviorTags: [.efficiencyFantasy, .selfImprovement]
+        )
+
+        XCTAssertFalse(bundle.title.isEmpty)
+        XCTAssertFalse(bundle.subtitle.isEmpty)
+    }
 }

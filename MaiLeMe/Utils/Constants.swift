@@ -82,6 +82,21 @@ enum AppConstants {
             let actionTitle: String
         }
 
+        /// 新文案引擎解析器：兼容层优先走结构化资源，初始化失败时再保守回退到旧常量池。
+        private static let resolver: CopyResolver? = {
+            do {
+                let library = try CopyLibraryLoader(bundle: .main).load()
+                return CopyResolver(
+                    library: library,
+                    memoryStore: CopyMemoryStore()
+                )
+            } catch {
+                // 兼容层不能因为资源异常直接把旧流程打挂，调试环境先抛断言帮助定位。
+                assertionFailure("毒舌文案解析器初始化失败：\(error.localizedDescription)")
+                return nil
+            }
+        }()
+
         // MARK: - 通知文案
         /// 轻提醒文案模板（第一个参数：物品名；第二个参数：吃灰天数）。
         private static let lightTemplates: [String] = [
@@ -468,7 +483,24 @@ enum AppConstants {
         // MARK: - 仪式文案生成入口
         /// 决策成功（忍住没买）的仪式文案。
         static func decisionSavedBundle() -> DecisionBundle {
-            pickRandom(
+            decisionSavedBundle(
+                itemName: "",
+                itemID: nil,
+                primaryCategory: .other,
+                secondaryCategory: .other,
+                behaviorTags: []
+            )
+        }
+
+        /// 决策成功（忍住没买）的仪式文案：支持向新引擎透传条目语义，供兼容层渐进迁移。
+        static func decisionSavedBundle(
+            itemName: String,
+            itemID: UUID?,
+            primaryCategory: ItemPrimaryCategory,
+            secondaryCategory: ItemSecondaryCategory,
+            behaviorTags: [ItemBehaviorTag]
+        ) -> DecisionBundle {
+            let fallback = pickRandom(
                 from: decisionSavedBundles,
                 fallback: DecisionBundle(
                     title: "理性胜利，冲动当场下线",
@@ -476,17 +508,54 @@ enum AppConstants {
                     actionTitle: "继续克制"
                 )
             )
+
+            return resolveDecisionBundle(
+                scene: "decision_saved",
+                fallback: fallback,
+                itemName: itemName,
+                itemID: itemID,
+                primaryCategory: primaryCategory,
+                secondaryCategory: secondaryCategory,
+                behaviorTags: behaviorTags
+            )
         }
 
         /// 决策成功（还是买了）的仪式文案。
         static func decisionPurchasedBundle() -> DecisionBundle {
-            pickRandom(
+            decisionPurchasedBundle(
+                itemName: "",
+                itemID: nil,
+                primaryCategory: .other,
+                secondaryCategory: .other,
+                behaviorTags: []
+            )
+        }
+
+        /// 决策成功（还是买了）的仪式文案：兼容层先走 resolver，旧无参调用点通过默认语义继续可用。
+        static func decisionPurchasedBundle(
+            itemName: String,
+            itemID: UUID?,
+            primaryCategory: ItemPrimaryCategory,
+            secondaryCategory: ItemSecondaryCategory,
+            behaviorTags: [ItemBehaviorTag]
+        ) -> DecisionBundle {
+            let fallback = pickRandom(
                 from: decisionPurchasedBundles,
                 fallback: DecisionBundle(
                     title: "决策已落地，接下来拼回本",
                     subtitle: "既然买了就狠狠干活，别让它有机会继续吃灰。",
                     actionTitle: "去榨干机打卡"
                 )
+            )
+
+            return resolveDecisionBundle(
+                scene: "decision_purchased",
+                fallback: fallback,
+                itemName: itemName,
+                itemID: itemID,
+                primaryCategory: primaryCategory,
+                secondaryCategory: secondaryCategory,
+                behaviorTags: behaviorTags
             )
         }
 
@@ -816,6 +885,85 @@ enum AppConstants {
         }
 
         // MARK: - 通用工具
+        /// 解析决策场景的标题/副标题/按钮文案；若 resolver 或资源不可用，则整体回退到旧版 bundle。
+        private static func resolveDecisionBundle(
+            scene: String,
+            fallback: DecisionBundle,
+            itemName: String,
+            itemID: UUID?,
+            primaryCategory: ItemPrimaryCategory,
+            secondaryCategory: ItemSecondaryCategory,
+            behaviorTags: [ItemBehaviorTag]
+        ) -> DecisionBundle {
+            guard let resolver else {
+                return fallback
+            }
+
+            return DecisionBundle(
+                title: resolveDecisionText(
+                    resolver: resolver,
+                    scene: scene,
+                    slot: .title,
+                    fallback: fallback.title,
+                    itemName: itemName,
+                    itemID: itemID,
+                    primaryCategory: primaryCategory,
+                    secondaryCategory: secondaryCategory,
+                    behaviorTags: behaviorTags
+                ),
+                subtitle: resolveDecisionText(
+                    resolver: resolver,
+                    scene: scene,
+                    slot: .subtitle,
+                    fallback: fallback.subtitle,
+                    itemName: itemName,
+                    itemID: itemID,
+                    primaryCategory: primaryCategory,
+                    secondaryCategory: secondaryCategory,
+                    behaviorTags: behaviorTags
+                ),
+                actionTitle: resolveDecisionText(
+                    resolver: resolver,
+                    scene: scene,
+                    slot: .actionTitle,
+                    fallback: fallback.actionTitle,
+                    itemName: itemName,
+                    itemID: itemID,
+                    primaryCategory: primaryCategory,
+                    secondaryCategory: secondaryCategory,
+                    behaviorTags: behaviorTags
+                )
+            )
+        }
+
+        /// 解析单个决策槽位文案；槽位级失败时仅回退该字段，避免因为一条文案缺失把整组文案都打回旧逻辑。
+        private static func resolveDecisionText(
+            resolver: CopyResolver,
+            scene: String,
+            slot: CopySlot,
+            fallback: String,
+            itemName: String,
+            itemID: UUID?,
+            primaryCategory: ItemPrimaryCategory,
+            secondaryCategory: ItemSecondaryCategory,
+            behaviorTags: [ItemBehaviorTag]
+        ) -> String {
+            let context = CopyContext(
+                module: .decision,
+                scene: scene,
+                slot: slot,
+                itemID: itemID,
+                itemName: itemName,
+                primaryCategory: primaryCategory,
+                secondaryCategory: secondaryCategory,
+                behaviorTags: behaviorTags,
+                intensityCap: .medium,
+                allowRandom: true
+            )
+
+            return (try? resolver.resolveSingle(context).text) ?? fallback
+        }
+
         /// 从模板池随机抽取一条并格式化（物品名 + 天数）。
         private static func format(templateFrom templates: [String], itemName: String, idleDays: Int) -> String {
             format(
