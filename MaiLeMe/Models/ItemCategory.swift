@@ -2,6 +2,8 @@ import Foundation
 
 /// 品类来源：标识条目分类信息来自自动识别、用户手选还是兜底降级。
 enum CopyCategorySource: String, Codable, CaseIterable {
+    /// 尚未经过任何分类处理，仍处于待判定状态。
+    case unresolved
     /// 由本地规则自动识别得到。
     case autoDetected
     /// 由用户手动选择确认。
@@ -12,6 +14,8 @@ enum CopyCategorySource: String, Codable, CaseIterable {
 
 /// 行为标签来源：区分是系统推断还是用户调整后的结果。
 enum CopyTagSource: String, Codable, CaseIterable {
+    /// 尚未对行为标签做任何处理。
+    case unresolved
     /// 根据分类或规则自动推断。
     case inferred
     /// 用户在 UI 上手动调整过。
