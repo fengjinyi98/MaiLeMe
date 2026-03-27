@@ -11,6 +11,13 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
+		D1A100010000000000000001 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = B9FA539A2F52D163008F1EE0 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = B9FA53A12F52D163008F1EE0;
+			remoteInfo = MaiLeMe;
+		};
 		C0DE0001000000000000000C /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = B9FA539A2F52D163008F1EE0 /* Project object */;
@@ -36,6 +43,7 @@
 
 /* Begin PBXFileReference section */
 		B9FA53A22F52D163008F1EE0 /* MaiLeMe.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = MaiLeMe.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		D1A100010000000000000002 /* MaiLeMeTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = MaiLeMeTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		C0DE00010000000000000001 /* MaiLeMeWidget.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = MaiLeMeWidget.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
@@ -43,6 +51,11 @@
 		B9FA53A42F52D163008F1EE0 /* MaiLeMe */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			path = MaiLeMe;
+			sourceTree = "<group>";
+		};
+		D1A100010000000000000003 /* MaiLeMeTests */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = MaiLeMeTests;
 			sourceTree = "<group>";
 		};
 		C0DE00010000000000000002 /* MaiLeMeWidget */ = {
@@ -54,6 +67,13 @@
 
 /* Begin PBXFrameworksBuildPhase section */
 		B9FA539F2F52D163008F1EE0 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		D1A100010000000000000004 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -74,6 +94,7 @@
 			isa = PBXGroup;
 			children = (
 				B9FA53A42F52D163008F1EE0 /* MaiLeMe */,
+				D1A100010000000000000003 /* MaiLeMeTests */,
 				C0DE00010000000000000002 /* MaiLeMeWidget */,
 				B9FA53A32F52D163008F1EE0 /* Products */,
 			);
@@ -83,6 +104,7 @@
 			isa = PBXGroup;
 			children = (
 				B9FA53A22F52D163008F1EE0 /* MaiLeMe.app */,
+				D1A100010000000000000002 /* MaiLeMeTests.xctest */,
 				C0DE00010000000000000001 /* MaiLeMeWidget.appex */,
 			);
 			name = Products;
@@ -114,6 +136,29 @@
 			productName = MaiLeMe;
 			productReference = B9FA53A22F52D163008F1EE0 /* MaiLeMe.app */;
 			productType = "com.apple.product-type.application";
+		};
+		D1A100010000000000000005 /* MaiLeMeTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = D1A10001000000000000000B /* Build configuration list for PBXNativeTarget "MaiLeMeTests" */;
+			buildPhases = (
+				D1A100010000000000000007 /* Sources */,
+				D1A100010000000000000004 /* Frameworks */,
+				D1A100010000000000000006 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				D1A100010000000000000008 /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				D1A100010000000000000003 /* MaiLeMeTests */,
+			);
+			name = MaiLeMeTests;
+			packageProductDependencies = (
+			);
+			productName = MaiLeMeTests;
+			productReference = D1A100010000000000000002 /* MaiLeMeTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
 		};
 		C0DE00010000000000000006 /* MaiLeMeWidget */ = {
 			isa = PBXNativeTarget;
@@ -150,6 +195,10 @@
 					B9FA53A12F52D163008F1EE0 = {
 						CreatedOnToolsVersion = 26.3;
 					};
+					D1A100010000000000000005 = {
+						CreatedOnToolsVersion = 26.3;
+						TestTargetID = B9FA53A12F52D163008F1EE0;
+					};
 					C0DE00010000000000000006 = {
 						CreatedOnToolsVersion = 26.3;
 					};
@@ -170,6 +219,7 @@
 			projectRoot = "";
 			targets = (
 				B9FA53A12F52D163008F1EE0 /* MaiLeMe */,
+				D1A100010000000000000005 /* MaiLeMeTests */,
 				C0DE00010000000000000006 /* MaiLeMeWidget */,
 			);
 		};
@@ -177,6 +227,13 @@
 
 /* Begin PBXResourcesBuildPhase section */
 		B9FA53A02F52D163008F1EE0 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		D1A100010000000000000006 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -200,6 +257,13 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		D1A100010000000000000007 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		C0DE00010000000000000003 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -210,6 +274,11 @@
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
+		D1A100010000000000000008 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = B9FA53A12F52D163008F1EE0 /* MaiLeMe */;
+			targetProxy = D1A100010000000000000001 /* PBXContainerItemProxy */;
+		};
 		C0DE0001000000000000000D /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
 			target = C0DE00010000000000000006 /* MaiLeMeWidget */;
@@ -337,7 +406,7 @@
 		B9FA53B02F52D163008F1EE0 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				APP_GROUPS = group.com.jinyi.MaiLeMe;
+				APP_GROUPS = group.com.fengjinyi.maileme;
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = MaiLeMe/MaiLeMe.entitlements;
@@ -355,7 +424,7 @@
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
 				MACOSX_DEPLOYMENT_TARGET = 26.2;
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.jinyi.MaiLeMe;
+				PRODUCT_BUNDLE_IDENTIFIER = com.fengjinyi.maileme;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				REGISTER_APP_GROUPS = YES;
 				SDKROOT = auto;
@@ -374,7 +443,7 @@
 		B9FA53B12F52D163008F1EE0 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				APP_GROUPS = group.com.jinyi.MaiLeMe;
+				APP_GROUPS = group.com.fengjinyi.maileme;
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = MaiLeMe/MaiLeMe.entitlements;
@@ -392,7 +461,7 @@
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
 				MACOSX_DEPLOYMENT_TARGET = 26.2;
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.jinyi.MaiLeMe;
+				PRODUCT_BUNDLE_IDENTIFIER = com.fengjinyi.maileme;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				REGISTER_APP_GROUPS = YES;
 				SDKROOT = auto;
@@ -408,11 +477,63 @@
 			};
 			name = Release;
 		};
+		D1A100010000000000000009 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 296W45CU96;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 26.2;
+				MACOSX_DEPLOYMENT_TARGET = 26.2;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.fengjinyi.mailemeTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = auto;
+				STRING_CATALOG_GENERATE_SYMBOLS = NO;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx xros xrsimulator";
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2,7";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/MaiLeMe.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/MaiLeMe";
+				XROS_DEPLOYMENT_TARGET = 26.2;
+			};
+			name = Debug;
+		};
+		D1A10001000000000000000A /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 296W45CU96;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 26.2;
+				MACOSX_DEPLOYMENT_TARGET = 26.2;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.fengjinyi.mailemeTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = auto;
+				STRING_CATALOG_GENERATE_SYMBOLS = NO;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx xros xrsimulator";
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2,7";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/MaiLeMe.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/MaiLeMe";
+				XROS_DEPLOYMENT_TARGET = 26.2;
+			};
+			name = Release;
+		};
 		C0DE00010000000000000008 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				APPLICATION_EXTENSION_API_ONLY = YES;
-				APP_GROUPS = group.com.jinyi.MaiLeMe;
+				APP_GROUPS = group.com.fengjinyi.maileme;
 				CODE_SIGN_ENTITLEMENTS = MaiLeMeWidget/MaiLeMeWidget.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
@@ -426,7 +547,7 @@
 					"@executable_path/../../Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.jinyi.MaiLeMe.widget;
+				PRODUCT_BUNDLE_IDENTIFIER = com.fengjinyi.maileme.widget;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = auto;
 				SKIP_INSTALL = YES;
@@ -440,7 +561,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				APPLICATION_EXTENSION_API_ONLY = YES;
-				APP_GROUPS = group.com.jinyi.MaiLeMe;
+				APP_GROUPS = group.com.fengjinyi.maileme;
 				CODE_SIGN_ENTITLEMENTS = MaiLeMeWidget/MaiLeMeWidget.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
@@ -454,7 +575,7 @@
 					"@executable_path/../../Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.jinyi.MaiLeMe.widget;
+				PRODUCT_BUNDLE_IDENTIFIER = com.fengjinyi.maileme.widget;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = auto;
 				SKIP_INSTALL = YES;
@@ -481,6 +602,15 @@
 			buildConfigurations = (
 				B9FA53B02F52D163008F1EE0 /* Debug */,
 				B9FA53B12F52D163008F1EE0 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		D1A10001000000000000000B /* Build configuration list for PBXNativeTarget "MaiLeMeTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				D1A100010000000000000009 /* Debug */,
+				D1A10001000000000000000A /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
