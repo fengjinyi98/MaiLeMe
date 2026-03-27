@@ -775,16 +775,17 @@ enum AppConstants {
                     ),
                     itemName: itemName,
                     itemID: itemID,
-                    primaryCategory: primaryCategory,
-                    secondaryCategory: secondaryCategory,
-                    behaviorTags: behaviorTags,
-                    intensityCap: .low,
-                    allowRandom: false
-                )
-            }
-            return resolveCopyText(
-                module: .share,
-                scene: "decision_purchased_outcome",
+                primaryCategory: primaryCategory,
+                secondaryCategory: secondaryCategory,
+                behaviorTags: behaviorTags,
+                intensityCap: .low,
+                allowRandom: false,
+                usesMemory: false
+            )
+        }
+        return resolveCopyText(
+            module: .share,
+            scene: "decision_purchased_outcome",
                 slot: .body,
                 fallback: pickStable(
                     from: decisionPurchasedOutcomeTemplates,
@@ -797,7 +798,8 @@ enum AppConstants {
                 secondaryCategory: secondaryCategory,
                 behaviorTags: behaviorTags,
                 intensityCap: .medium,
-                allowRandom: false
+                allowRandom: false,
+                usesMemory: false
             )
         }
 
@@ -1030,7 +1032,8 @@ enum AppConstants {
                 secondaryCategory: secondaryCategory,
                 behaviorTags: behaviorTags,
                 intensityCap: .low,
-                allowRandom: false
+                allowRandom: false,
+                usesMemory: false
             )
             return """
             我在「买了么」完成一次榨干机打卡：
@@ -1309,7 +1312,8 @@ enum AppConstants {
                 secondaryCategory: secondaryCategory,
                 behaviorTags: behaviorTags,
                 intensityCap: intensityCap,
-                allowRandom: false
+                allowRandom: false,
+                usesMemory: false
             )
         }
 
@@ -1370,7 +1374,8 @@ enum AppConstants {
                 secondaryCategory: secondaryCategory,
                 behaviorTags: behaviorTags,
                 intensityCap: intensityCap,
-                allowRandom: false
+                allowRandom: false,
+                usesMemory: false
             )
         }
 
@@ -1390,7 +1395,8 @@ enum AppConstants {
                 secondaryCategory: .other,
                 behaviorTags: [],
                 intensityCap: .low,
-                allowRandom: false
+                allowRandom: false,
+                usesMemory: false
             )
         }
 
@@ -1410,7 +1416,8 @@ enum AppConstants {
                 secondaryCategory: .other,
                 behaviorTags: [],
                 intensityCap: .low,
-                allowRandom: false
+                allowRandom: false,
+                usesMemory: false
             )
         }
 
@@ -1543,6 +1550,7 @@ enum AppConstants {
             behaviorTags: [ItemBehaviorTag],
             intensityCap: CopyIntensity,
             allowRandom: Bool = true,
+            usesMemory: Bool = true,
             variables: [String: String] = [:]
         ) -> String {
             guard let resolver else {
@@ -1561,6 +1569,7 @@ enum AppConstants {
                 behaviorTags: behaviorTags,
                 intensityCap: intensityCap,
                 allowRandom: allowRandom,
+                usesMemory: usesMemory,
                 variables: variables
             )
 

@@ -492,8 +492,8 @@ final class CopyResolverTests: XCTestCase {
         XCTAssertTrue(notificationRecords.allSatisfy { $0.slot == .body })
     }
 
-    /// 省钱复盘、空状态与分享兼容 API 接入新引擎后，应把命中场景写入记忆层，证明调用点已经不再停留在静态模板池。
-    func test_saved_review_empty_state_and_share_apis_record_resolved_copy_usage() throws {
+    /// 省钱复盘、空状态与分享兼容 API 应保持纯文本生成，不应在视图重绘时额外写入文案记忆层。
+    func test_saved_review_empty_state_and_share_apis_do_not_mutate_copy_memory() throws {
         clearStandardCopyMemory()
 
         let itemID = UUID(uuidString: "88888888-8888-8888-8888-888888888888")!
@@ -537,27 +537,6 @@ final class CopyResolverTests: XCTestCase {
         XCTAssertTrue(checkinShareCopy.contains("你也来试试，别让买过的东西继续吃灰。"))
 
         let records = try loadStandardCopyMemoryRecords()
-        let savedReviewRecords = records.filter { record in
-            record.module == .savedReview && record.itemID == itemID
-        }
-        let savedReviewSceneBySlot = Dictionary(uniqueKeysWithValues: savedReviewRecords.map { ($0.slot, $0.scene) })
-        let emptyStateRecords = records.filter { $0.module == .emptyState }
-        let emptyStateScenes = Set(emptyStateRecords.map(\.scene))
-        let shareRecords = records.filter { record in
-            record.module == .share && record.itemID == itemID
-        }
-        let shareScenes = Set(shareRecords.map(\.scene))
-
-        XCTAssertEqual(savedReviewRecords.count, 2)
-        XCTAssertEqual(Set(savedReviewRecords.map(\.slot)), Set([.title, .body]))
-        XCTAssertEqual(savedReviewSceneBySlot[.title], "headline_high")
-        XCTAssertEqual(savedReviewSceneBySlot[.body], "body_mid_cooldown")
-        XCTAssertEqual(emptyStateRecords.count, 2)
-        XCTAssertEqual(Set(emptyStateRecords.map(\.slot)), Set([.body]))
-        XCTAssertEqual(emptyStateScenes, Set(["dark_room_empty", "extractor_empty"]))
-        XCTAssertEqual(shareRecords.count, 2)
-        XCTAssertEqual(Set(shareRecords.map(\.slot)), Set([.body]))
-        XCTAssertEqual(shareScenes, Set(["decision_saved_outcome", "checkin_share_closing"]))
-        XCTAssertTrue(shareRecords.allSatisfy { $0.itemID == itemID })
+        XCTAssertTrue(records.isEmpty)
     }
 }

@@ -22,6 +22,8 @@ struct CopyContext: Equatable, Sendable {
     let intensityCap: CopyIntensity
     /// 是否允许命中随机型文案。
     let allowRandom: Bool
+    /// 是否需要参与文案历史读写；纯展示型文案应关闭，避免在 `body` 重绘时产生持久化副作用。
+    let usesMemory: Bool
     /// 模板渲染变量表。
     let variables: [String: String]
 
@@ -37,6 +39,7 @@ struct CopyContext: Equatable, Sendable {
     ///   - behaviorTags: 行为标签集合。
     ///   - intensityCap: 当前场景允许的最高文案强度。
     ///   - allowRandom: 是否允许随机型文案参与候选。
+    ///   - usesMemory: 是否需要参与最近文案历史读写；默认开启，纯展示型场景可显式关闭。
     ///   - variables: 额外模板变量；会与 itemName / itemID / scene 自动合并。
     init(
         module: CopyModule,
@@ -49,6 +52,7 @@ struct CopyContext: Equatable, Sendable {
         behaviorTags: [ItemBehaviorTag] = [],
         intensityCap: CopyIntensity = .high,
         allowRandom: Bool = true,
+        usesMemory: Bool = true,
         variables: [String: String] = [:]
     ) {
         var mergedVariables = variables
@@ -74,6 +78,7 @@ struct CopyContext: Equatable, Sendable {
         self.behaviorTags = behaviorTags
         self.intensityCap = intensityCap
         self.allowRandom = allowRandom
+        self.usesMemory = usesMemory
         self.variables = mergedVariables
     }
 }

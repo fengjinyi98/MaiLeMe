@@ -61,7 +61,9 @@ final class CopyResolver {
             context: context
         )
 
-        let recentCopyIDs = Set(memoryStore.recentCopyIDs(module: context.module))
+        let recentCopyIDs = context.usesMemory
+            ? Set(memoryStore.recentCopyIDs(module: context.module))
+            : []
         let bestEntry = candidates
             .map { entry in
                 (entry: entry, score: score(entry, context: context, recentCopyIDs: recentCopyIDs))
@@ -91,15 +93,17 @@ final class CopyResolver {
             isFallback: isFallbackEntry(bestEntry)
         )
 
-        memoryStore.record(
-            copyID: bestEntry.id,
-            module: context.module,
-            scene: context.scene,
-            slot: context.slot,
-            itemID: context.itemID,
-            tone: bestEntry.tone,
-            intensity: bestEntry.intensity
-        )
+        if context.usesMemory {
+            memoryStore.record(
+                copyID: bestEntry.id,
+                module: context.module,
+                scene: context.scene,
+                slot: context.slot,
+                itemID: context.itemID,
+                tone: bestEntry.tone,
+                intensity: bestEntry.intensity
+            )
+        }
 
         return result
     }
